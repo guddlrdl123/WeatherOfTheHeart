@@ -1,19 +1,26 @@
 node_modules/
 dist/
 .vite/
+coverage/
 
 *.log
 vite.log
 vite.err.log
+npm-debug.log*
 
 .env
 .env.*
 !.env.example
 
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
 backend/.env
 backend/.env.*
 !backend/.env.example
+backend/build/
+backend/.gradle/
 
 .DS_Store
 Thumbs.db
-
