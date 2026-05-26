@@ -1,17 +1,20 @@
 import type { WeatherKey } from "../../types/weather";
 
+// 비 효과는 정적인 배열을 만들어 렌더마다 위치가 흔들리지 않게 합니다.
 const drops = Array.from({ length: 22 }, (_, index) => ({
   left: `${4 + ((index * 4.3) % 90)}%`,
   delay: `${(index * 0.12) % 1.4}s`,
   height: 12 + ((index * 5) % 18),
 }));
 
+// 눈 효과도 같은 이유로 위치/크기/딜레이를 미리 계산합니다.
 const snow = Array.from({ length: 18 }, (_, index) => ({
   left: `${6 + ((index * 5.1) % 88)}%`,
   delay: `${(index * 0.28) % 3.2}s`,
   size: 3 + (index % 3),
 }));
 
+// 창문 안에서만 보이는 작은 날씨 효과입니다.
 export function WeatherEffect({ weatherKey }: { weatherKey: WeatherKey }) {
   if (weatherKey === "rainy") {
     return (

@@ -1,6 +1,7 @@
 import type { MailboxItem } from "../../types/mailbox";
 import { formatDotDate } from "../../utils/date";
 
+// 우편함 목록에서 우편 하나를 보여주는 카드 버튼입니다.
 export function MailboxCard({
   item,
   onClick,

@@ -2,6 +2,7 @@ import { PLAZA_SLOT_POSITIONS, ROOM_SLOT_POSITIONS } from "../../constants/objec
 import type { ObjectSlotKey } from "../../types/object";
 import { type SceneObjectRecord, RoomObjectItem } from "./RoomObjectItem";
 
+// 여러 기록을 슬롯 좌표에 맞춰 자동 배치하는 레이어입니다.
 export function RoomObjectLayer({
   records,
   mode = "room",
@@ -16,6 +17,7 @@ export function RoomObjectLayer({
   onObjectClick: (record: SceneObjectRecord) => void;
 }) {
   const positions = mode === "plaza" ? PLAZA_SLOT_POSITIONS : ROOM_SLOT_POSITIONS;
+  // 같은 슬롯에 여러 오브젝트가 오면 offset을 누적해서 겹침을 줄입니다.
   const slotCounts: Partial<Record<ObjectSlotKey, number>> = {};
 
   return (

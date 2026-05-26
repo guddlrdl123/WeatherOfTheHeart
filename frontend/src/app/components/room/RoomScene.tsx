@@ -5,6 +5,7 @@ import { WeatherEffect } from "./WeatherEffect";
 import { RoomObjectLayer } from "../object/RoomObjectLayer";
 import type { SceneObjectRecord } from "../object/RoomObjectItem";
 
+// 라이트 모드에서는 기존 다크 날씨 색을 그대로 쓰면 너무 어두워서 별도 톤을 둡니다.
 const LIGHT_SCENE_TONES: Record<
   WeatherKey,
   {
@@ -59,6 +60,7 @@ const LIGHT_SCENE_TONES: Record<
   },
 };
 
+// 창문, 바닥, 침대/광장 바닥, 날씨 효과, 오브젝트 레이어를 합쳐 하나의 장면을 만듭니다.
 export function RoomScene({
   weatherKey,
   records,
@@ -78,6 +80,7 @@ export function RoomScene({
 }) {
   const { theme } = useAppStore();
   const weather = WEATHER_BY_KEY[weatherKey];
+  // 현재 테마에 맞춰 방 전체 색감과 창밖 색을 고릅니다.
   const scene = theme === "light" ? LIGHT_SCENE_TONES[weatherKey] : weather;
 
   return (

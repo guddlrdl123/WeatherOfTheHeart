@@ -2,6 +2,8 @@ import { OBJECT_BY_KEY } from "../../constants/objects";
 import type { ObjectSlotKey } from "../../types/object";
 import type { WeatherKey } from "../../types/weather";
 
+// RoomScene에 실제로 배치할 수 있는 기록 형태입니다.
+// 개인 방 Memory와 광장 PlazaEntry가 모두 이 모양으로 변환됩니다.
 export type SceneObjectRecord = {
   id: string;
   title?: string;
@@ -13,6 +15,8 @@ export type SceneObjectRecord = {
   ownerId?: string;
 };
 
+// 방이나 광장 위에 놓이는 오브젝트 하나입니다.
+// hover하면 제목 tooltip을 보여주고, click하면 글 팝업을 엽니다.
 export function RoomObjectItem({
   record,
   left,

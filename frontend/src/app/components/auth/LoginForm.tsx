@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useAppStore } from "../../stores/AppStore";
 
+// 실제 API 대신 authService mock 로그인으로 연결되는 로그인 폼입니다.
 export function LoginForm() {
   const { login, navigate } = useAppStore();
   const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ export function LoginForm() {
     event.preventDefault();
     setError("");
 
+    // 사용자가 바로 이해할 수 있는 최소한의 프론트 validation만 수행합니다.
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       setError("올바른 이메일 형식으로 입력해주세요.");
       return;

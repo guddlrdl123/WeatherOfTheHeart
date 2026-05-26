@@ -10,6 +10,7 @@ import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
 import { useAppStore } from "../stores/AppStore";
 import { formatDotDate, getTodayString } from "../utils/date";
 
+// 개인 방 화면입니다. 캘린더, 방 장면, 글 작성 모달을 한 페이지에서 조율합니다.
 export function RoomPage() {
   const { selectedDate, setSelectedDate, memories, addMemory, selectedMemory, currentWeather } = useAppStore();
   const initial = new Date(`${selectedDate}T00:00:00`);
@@ -21,6 +22,7 @@ export function RoomPage() {
   const today = getTodayString();
   const weather = WEATHER_BY_KEY[currentWeather];
 
+  // 저장 완료/중복 안내 토스트는 잠깐 보여준 뒤 사라지게 합니다.
   useEffect(() => {
     if (!toast) {
       return;
@@ -30,6 +32,7 @@ export function RoomPage() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  // RoomScene은 장면용 record 배열을 받으므로 선택 날짜의 기록을 배열로 변환합니다.
   const sceneRecords = useMemo<SceneObjectRecord[]>(() => {
     if (!selectedMemory) {
       return [];
@@ -57,6 +60,7 @@ export function RoomPage() {
   function handleNextMonth() {
     const now = new Date();
 
+    // 미래 월로는 이동하지 못하게 막습니다.
     if (viewYear > now.getFullYear() || (viewYear === now.getFullYear() && viewMonth >= now.getMonth() + 1)) {
       return;
     }
@@ -75,6 +79,7 @@ export function RoomPage() {
     const result = addMemory(value);
 
     if (!result.ok) {
+      // 같은 날짜에 이미 기록이 있으면 새 기록을 만들지 않습니다.
       setToast("이미 이 날의 이야기가 방에 남아 있어요.");
       return;
     }

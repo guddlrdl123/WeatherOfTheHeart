@@ -9,6 +9,7 @@ import type { MoodKey, WeatherKey } from "../../types/weather";
 import { getTodayString } from "../../utils/date";
 import { ObjectPicker } from "../object/ObjectPicker";
 
+// 개인 방과 광장 글 작성이 공통으로 사용하는 제출 값입니다.
 export type WriteModalValue = {
   memoryDate: string;
   title?: string;
@@ -19,6 +20,8 @@ export type WriteModalValue = {
   slotKey: ObjectSlotKey;
 };
 
+// 작은 메모지처럼 동작하는 글 작성 모달입니다.
+// mode 값에 따라 개인 방용/광장용 문구와 오브젝트 범위가 달라집니다.
 export function MemoryWriteModal({
   mode = "private",
   initialDate,
@@ -51,6 +54,7 @@ export function MemoryWriteModal({
 
     const trimmedContent = content.trim();
 
+    // 이미 작성된 날짜나 이미 참여한 광장에서는 새 글 작성을 막습니다.
     if (existingMemory || existingNotice) {
       setError(existingNotice ?? "이미 이 날짜의 이야기가 방에 남아 있어요.");
       return;
@@ -67,6 +71,7 @@ export function MemoryWriteModal({
     }
 
     const object = OBJECT_BY_KEY[objectKey];
+    // 오브젝트의 slotKey를 함께 넘겨 RoomScene이 고정 위치에 자동 배치할 수 있게 합니다.
     onSave({
       memoryDate,
       title: title.trim() || undefined,

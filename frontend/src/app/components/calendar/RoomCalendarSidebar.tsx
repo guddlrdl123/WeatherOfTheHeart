@@ -2,6 +2,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Memory } from "../../types/memory";
 import { DAY_LABELS, getMonthDays, getTodayString, MONTH_LABELS } from "../../utils/date";
 
+// 개인 방 왼쪽에 놓이는 월간 캘린더입니다.
+// 기록이 있는 날짜, 오늘, 선택 날짜, 미래 날짜 상태를 각각 다르게 표시합니다.
 export function RoomCalendarSidebar({
   year,
   month,
@@ -21,6 +23,7 @@ export function RoomCalendarSidebar({
 }) {
   const today = getTodayString();
   const days = getMonthDays(year, month);
+  // Set으로 바꿔두면 날짜별 기록 존재 여부를 빠르게 확인할 수 있습니다.
   const memoryDates = new Set(memories.map((memory) => memory.memoryDate));
   const now = new Date();
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);

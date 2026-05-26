@@ -1,6 +1,7 @@
 import { OBJECT_BY_KEY, ROOM_OBJECTS } from "../../constants/objects";
 import type { RoomObject } from "../../types/object";
 
+// 글 작성 모달에서 오브젝트를 고르는 선택 영역입니다.
 export function ObjectPicker({
   value,
   onChange,
@@ -10,6 +11,7 @@ export function ObjectPicker({
   onChange: (object: RoomObject) => void;
   scope?: "private" | "plaza";
 }) {
+  // 개인 방과 광장에 허용된 오브젝트가 다르므로 scope에 맞춰 필터링합니다.
   const objects = ROOM_OBJECTS.filter((object) => (scope === "private" ? object.allowPrivate : object.allowPlaza));
 
   return (

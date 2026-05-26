@@ -9,6 +9,7 @@ import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
 import { useAppStore } from "../stores/AppStore";
 import { getTodayString } from "../utils/date";
 
+// 광장 하나의 상세 장면과 글 남기기 흐름을 담당합니다.
 export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const { plazas, plazaEntries, user, addPlazaEntry, navigate } = useAppStore();
   const plaza = plazas.find((item) => item.id === plazaId);
@@ -17,6 +18,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const [popupRecord, setPopupRecord] = useState<SceneObjectRecord | null>(null);
   const [toast, setToast] = useState("");
 
+  // 저장 안내 문구는 잠깐 보여준 뒤 자동으로 사라지게 합니다.
   useEffect(() => {
     if (!toast) {
       return;
@@ -26,10 +28,12 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  // 현재 광장에 속한 entry만 골라 장면에 넘깁니다.
   const entries = useMemo(() => plazaEntries.filter((entry) => entry.plazaId === plazaId), [plazaEntries, plazaId]);
   const myEntry = user ? entries.find((entry) => entry.ownerId === user.id) : undefined;
   const records: SceneObjectRecord[] = entries.map((entry) => ({ ...entry, weatherKey: entry.weatherKey }));
 
+  // 주소에 존재하지 않는 plazaId가 들어오면 목록으로 돌아갈 수 있게 안내합니다.
   if (!plaza) {
     return (
       <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[720px] items-center justify-center px-5">
@@ -54,6 +58,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     }
 
     if (!plaza.allowDuplicateObjects && entries.some((entry) => entry.objectKey === value.objectKey)) {
+      // 중복 오브젝트를 허용하지 않는 광장에서는 이미 놓인 오브젝트를 다시 쓸 수 없습니다.
       setToast("이 광장에는 같은 오브젝트가 이미 놓여 있어요.");
       return;
     }

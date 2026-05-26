@@ -14,6 +14,7 @@ import { readStorage, writeStorage } from "../lib/storage";
 
 export type AppTheme = "dark" | "light";
 
+// 화면 대부분이 공유하는 전역 상태와 액션의 모양입니다.
 type AppStore = {
   route: AppRoute;
   navigate: (route: AppRoute) => void;
@@ -40,6 +41,7 @@ type AppStore = {
 
 const AppStoreContext = createContext<AppStore | null>(null);
 
+// 새로고침했을 때 현재 브라우저 주소를 초기 route로 사용합니다.
 function getInitialRoute(): AppRoute {
   if (typeof window === "undefined") {
     return "/";
@@ -48,10 +50,12 @@ function getInitialRoute(): AppRoute {
   return window.location.pathname || "/";
 }
 
+// 사용자가 마지막으로 고른 테마를 localStorage에서 복원합니다.
 function getInitialTheme(): AppTheme {
   return readStorage<AppTheme>("maeum-weather:theme", "dark");
 }
 
+// mock service layer에서 초기 데이터를 읽고, 앱 전체 상태를 Context로 내려줍니다.
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<AppRoute>(() => getInitialRoute());
   const [theme, setThemeState] = useState<AppTheme>(() => getInitialTheme());
@@ -62,6 +66,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
   const [mailboxItems, setMailboxItems] = useState<MailboxItem[]>(() => mailboxService.list());
 
+  // 브라우저 뒤로가기/앞으로가기를 눌렀을 때 route 상태를 주소와 맞춥니다.
   useEffect(() => {
     function handlePopState() {
       setRoute(getInitialRoute());
@@ -71,6 +76,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  // 테마 상태가 바뀔 때 html 태그에 data-theme/class를 반영합니다.
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -87,6 +93,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const navigate = useCallback((nextRoute: AppRoute) => {
+    // 실제 페이지 이동 없이 주소만 바꾸고 React 상태로 화면을 교체합니다.
     window.history.pushState(null, "", nextRoute);
     setRoute(nextRoute);
   }, []);
@@ -122,11 +129,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [memories, selectedDate],
   );
 
+  // 선택된 날짜의 기록이 있으면 그 기록의 날씨를, 없으면 기본 흐림 날씨를 사용합니다.
   const currentWeather = selectedMemory?.weatherKey ?? "cloudy";
 
   const addMemory = useCallback((input: CreateMemoryInput) => {
     const result = memoryService.create(input);
 
+    // 저장 성공 후에는 service에서 다시 목록을 읽어 화면 상태를 최신화합니다.
     if (result.ok) {
       setMemories(memoryService.list());
     }
@@ -155,6 +164,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppStore>(
+    // Context 값은 여러 컴포넌트가 읽으므로 useMemo로 불필요한 객체 재생성을 줄입니다.
     () => ({
       route,
       navigate,
@@ -205,6 +215,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
 
+// AppStoreProvider 밖에서 실수로 호출하면 바로 알아차릴 수 있게 에러를 던집니다.
 export function useAppStore() {
   const value = useContext(AppStoreContext);
 

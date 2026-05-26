@@ -5,6 +5,7 @@ import { useEscapeKey } from "../../hooks/useEscapeKey";
 import { formatDotDate } from "../../utils/date";
 import type { SceneObjectRecord } from "../object/RoomObjectItem";
 
+// 오브젝트를 클릭했을 때 해당 기록 내용을 보여주는 팝업입니다.
 export function MemoryPopup({
   record,
   onClose,
@@ -14,6 +15,7 @@ export function MemoryPopup({
 }) {
   const object = OBJECT_BY_KEY[record.objectKey];
   const weather = WEATHER_BY_KEY[record.weatherKey];
+  // 모달을 열었을 때 ESC 키로 닫을 수 있게 합니다.
   useEscapeKey(onClose);
 
   return (

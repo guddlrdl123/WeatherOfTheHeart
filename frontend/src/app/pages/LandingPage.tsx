@@ -3,6 +3,7 @@ import { useAppStore } from "../stores/AppStore";
 import { RoomScene } from "../components/room/RoomScene";
 import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
 
+// 랜딩 화면에서 미리 보여주는 샘플 방 오브젝트입니다.
 const sampleRecords: SceneObjectRecord[] = [
   {
     id: "sample-1",
@@ -30,6 +31,7 @@ const sampleRecords: SceneObjectRecord[] = [
   },
 ];
 
+// 서비스 소개와 샘플 방을 보여주는 첫 화면입니다.
 export function LandingPage() {
   const { navigate, user } = useAppStore();
 
@@ -48,6 +50,7 @@ export function LandingPage() {
         <div className="mt-9 flex flex-wrap gap-3">
           <button
             type="button"
+            // 로그인 전이면 로그인 화면으로, 로그인 후면 바로 내 방으로 이동합니다.
             onClick={() => navigate(user ? "/room" : "/login")}
             className="mw-button-solid inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm"
           >

@@ -1,6 +1,7 @@
 import { LockKeyhole } from "lucide-react";
 import { useAppStore } from "../../stores/AppStore";
 
+// 보호된 페이지에 비로그인 사용자가 접근했을 때 보여주는 안내 화면입니다.
 export function AuthRequired() {
   const { navigate } = useAppStore();
 

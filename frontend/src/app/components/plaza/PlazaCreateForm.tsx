@@ -3,6 +3,7 @@ import { WEATHER_OPTIONS } from "../../constants/weather";
 import { useAppStore } from "../../stores/AppStore";
 import type { WeatherKey } from "../../types/weather";
 
+// 새 광장의 기본 설정을 입력받는 폼입니다.
 export function PlazaCreateForm() {
   const { createPlaza, navigate } = useAppStore();
   const [title, setTitle] = useState("");
@@ -37,6 +38,7 @@ export function PlazaCreateForm() {
       allowDuplicateObjects,
       backgroundKey,
     });
+    // 생성 직후 새 광장 상세 화면으로 이동합니다.
     navigate(`/plazas/${plaza.id}`);
   }
 

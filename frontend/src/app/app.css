@@ -1,5 +1,6 @@
 :root,
 html[data-theme="dark"] {
+  /* 마음의 날씨 전용 다크 모드 색상 토큰입니다. */
   --mw-bg: #080b14;
   --mw-bg-glow-1: rgba(104, 136, 174, 0.12);
   --mw-bg-glow-2: rgba(200, 150, 106, 0.08);
@@ -25,6 +26,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
+  /* 같은 컴포넌트 구조를 유지하면서 밝은 톤으로 바꾸는 라이트 모드 토큰입니다. */
   --mw-bg: #f3eee8;
   --mw-bg-glow-1: rgba(126, 149, 177, 0.2);
   --mw-bg-glow-2: rgba(202, 149, 110, 0.15);
@@ -55,6 +57,7 @@ body {
 }
 
 .mw-app {
+  /* 모든 페이지가 공유하는 앱 배경입니다. */
   min-height: 100vh;
   background:
     radial-gradient(circle at 18% 10%, var(--mw-bg-glow-1), transparent 32%),
@@ -97,6 +100,7 @@ body {
 }
 
 .mw-surface {
+  /* 카드, 모달, 사이드바처럼 조용히 떠 있는 표면 스타일입니다. */
   background: var(--mw-panel);
   border: 1px solid var(--mw-border);
 }
@@ -107,6 +111,7 @@ body {
 }
 
 .mw-button {
+  /* 보조 버튼: 배경은 약하고 테두리/텍스트로 강조합니다. */
   border: 1px solid color-mix(in srgb, var(--mw-accent) 46%, transparent);
   background: var(--mw-accent-soft);
   color: var(--mw-accent);
@@ -119,6 +124,7 @@ body {
 }
 
 .mw-button-solid {
+  /* 주요 행동 버튼: 글 저장, 시작하기처럼 확실한 행동에 사용합니다. */
   border: 1px solid color-mix(in srgb, var(--mw-accent) 76%, transparent);
   background: var(--mw-accent);
   color: var(--mw-solid-text);
@@ -130,6 +136,7 @@ body {
 }
 
 .mw-input {
+  /* input과 textarea가 같은 분위기를 갖도록 공통 클래스로 묶었습니다. */
   width: 100%;
   border-radius: 8px;
   border: 1px solid var(--mw-border-strong);
@@ -158,6 +165,7 @@ body {
   animation: mw-fade-in 180ms ease-out;
 }
 
+/* 아래 선택자들은 Tailwind의 white 계열 유틸을 라이트 모드에서 읽기 좋게 보정합니다. */
 html[data-theme="light"] [class*="text-white/"] {
   color: var(--mw-muted) !important;
 }
@@ -200,6 +208,7 @@ html[data-theme="light"] .mw-surface [style*="rgba(224,216,200"] {
   color: var(--mw-muted) !important;
 }
 
+/* WeatherEffect와 토스트/모달에서 사용하는 작은 애니메이션입니다. */
 @keyframes mw-rain-fall {
   from {
     transform: translateY(-24px);

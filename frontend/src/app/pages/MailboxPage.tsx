@@ -6,11 +6,13 @@ import { useAppStore } from "../stores/AppStore";
 import type { MailboxItem } from "../types/mailbox";
 import { formatDotDate } from "../utils/date";
 
+// 광장이 완성되었을 때 도착하는 메시지를 보여주는 우편함 화면입니다.
 export function MailboxPage() {
   const { mailboxItems, markMailboxRead } = useAppStore();
   const [selected, setSelected] = useState<MailboxItem | null>(null);
 
   function handleSelect(item: MailboxItem) {
+    // 우편을 열면 읽음 처리하고, 모달에는 읽음 상태로 표시합니다.
     markMailboxRead(item.id);
     setSelected({ ...item, read: true });
   }
@@ -33,6 +35,7 @@ export function MailboxPage() {
   );
 }
 
+// 우편 항목을 눌렀을 때 보여주는 상세 모달입니다.
 function MailboxModal({ item, onClose }: { item: MailboxItem; onClose: () => void }) {
   useEscapeKey(onClose);
 

@@ -3,6 +3,7 @@ import type { MailboxItem } from "../types/mailbox";
 import type { Memory } from "../types/memory";
 import type { Plaza, PlazaEntry } from "../types/plaza";
 
+// API가 연결되기 전 로그인 성공 상태를 보여주기 위한 기본 사용자입니다.
 export const MOCK_USER: AppUser = {
   id: "me",
   email: "demo@maeum.weather",
@@ -10,6 +11,7 @@ export const MOCK_USER: AppUser = {
   joinedAt: "2026-05-01T09:00:00.000Z",
 };
 
+// localStorage에 저장된 기록이 없을 때 처음 보여줄 개인 방 샘플 기록입니다.
 export const MOCK_MEMORIES: Memory[] = [
   {
     id: "memory-1",
@@ -46,6 +48,7 @@ export const MOCK_MEMORIES: Memory[] = [
   },
 ];
 
+// 광장 목록 화면을 처음 열었을 때 보여줄 샘플 광장입니다.
 export const MOCK_PLAZAS: Plaza[] = [
   {
     id: "plaza-night",
@@ -82,6 +85,7 @@ export const MOCK_PLAZAS: Plaza[] = [
   },
 ];
 
+// 광장 안에 이미 놓여 있는 샘플 오브젝트 기록입니다.
 export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
   {
     id: "plaza-entry-1",
@@ -133,6 +137,7 @@ export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
   },
 ];
 
+// 완성된 광장에서 도착한 것처럼 보이는 샘플 우편입니다.
 export const MOCK_MAILBOX_ITEMS: MailboxItem[] = [
   {
     id: "mail-1",

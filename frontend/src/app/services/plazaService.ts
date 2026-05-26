@@ -5,9 +5,11 @@ import { createId, readStorage, writeStorage } from "../lib/storage";
 const PLAZAS_KEY = "maeum-weather:plazas";
 const PLAZA_ENTRIES_KEY = "maeum-weather:plaza-entries";
 
+// 생성 시점에 서비스가 자동으로 채우는 필드를 입력값에서 제외합니다.
 export type CreatePlazaInput = Omit<Plaza, "id" | "createdAt">;
 export type CreatePlazaEntryInput = Omit<PlazaEntry, "id" | "createdAt" | "updatedAt">;
 
+// 광장과 광장 참여 기록을 localStorage에 저장하는 mock service layer입니다.
 export const plazaService = {
   listPlazas(): Plaza[] {
     return readStorage<Plaza[]>(PLAZAS_KEY, MOCK_PLAZAS);
@@ -47,10 +49,12 @@ export const plazaService = {
 
     const plazaEntries = entries.filter((entry) => entry.plazaId === input.plazaId);
 
+    // 한 사용자는 한 광장에 한 번만 글을 남길 수 있게 막습니다.
     if (plazaEntries.some((entry) => entry.ownerId === input.ownerId)) {
       return { ok: false, reason: "already_joined" };
     }
 
+    // 광장 최대 오브젝트 수에 도달하면 더 이상 참여할 수 없습니다.
     if (plazaEntries.length >= plaza.maxObjects) {
       return { ok: false, reason: "complete" };
     }

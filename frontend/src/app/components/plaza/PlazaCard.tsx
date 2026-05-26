@@ -3,6 +3,7 @@ import { WEATHER_BY_KEY } from "../../constants/weather";
 import { useAppStore } from "../../stores/AppStore";
 import type { Plaza, PlazaStatus } from "../../types/plaza";
 
+// 광장 목록에서 사용하는 카드입니다.
 export function PlazaCard({
   plaza,
   entryCount,
@@ -12,6 +13,7 @@ export function PlazaCard({
 }) {
   const { navigate } = useAppStore();
   const weather = WEATHER_BY_KEY[plaza.backgroundKey];
+  // 참여 수가 최대 오브젝트 수에 닿으면 완료 상태로 표시합니다.
   const status: PlazaStatus = entryCount >= plaza.maxObjects ? "complete" : "open";
 
   return (

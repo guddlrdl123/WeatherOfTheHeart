@@ -14,6 +14,7 @@ const appLinks: { label: string; route: AppRoute }[] = [
   { label: "마이페이지", route: "/profile" },
 ];
 
+// 로그인 여부에 따라 다른 메뉴를 보여주는 공통 상단 내비게이션입니다.
 export function AppHeader() {
   const { route, navigate, user, logout, theme, toggleTheme } = useAppStore();
   const links = user ? appLinks : authLinks;
@@ -32,6 +33,7 @@ export function AppHeader() {
 
         <nav className="flex items-center gap-1">
           {links.map((link) => {
+            // 광장 상세 페이지도 광장 메뉴가 활성화된 것으로 표시합니다.
             const active = route === link.route || (link.route === "/plazas" && route.startsWith("/plazas"));
 
             return (
@@ -58,6 +60,7 @@ export function AppHeader() {
           </button>
 
           {user && (
+            // 로그인 후에만 빠른 이동 아이콘들을 보여줍니다.
             <>
               <button
                 type="button"

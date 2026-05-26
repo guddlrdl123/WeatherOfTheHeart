@@ -1,5 +1,6 @@
 import type { WeatherKey, WeatherTone } from "../types/weather";
 
+// 선택 가능한 6가지 날씨와 각 날씨가 방에 적용할 색감 정보입니다.
 export const WEATHER_OPTIONS: WeatherTone[] = [
   {
     key: "sunny",
@@ -81,6 +82,7 @@ export const WEATHER_OPTIONS: WeatherTone[] = [
   },
 ];
 
+// key로 날씨 정보를 바로 찾기 위한 조회용 맵입니다.
 export const WEATHER_BY_KEY = WEATHER_OPTIONS.reduce<Record<WeatherKey, WeatherTone>>((acc, weather) => {
   acc[weather.key] = weather;
   return acc;

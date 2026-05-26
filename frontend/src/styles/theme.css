@@ -1,5 +1,6 @@
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn/ui와 Tailwind가 사용하는 기본 디자인 토큰입니다. */
 :root {
   --font-size: 16px;
   --background: #080b14;
@@ -41,6 +42,7 @@
   --sidebar-ring: #c8966a;
 }
 
+/* AppStore가 html.dark 클래스를 켰을 때 적용되는 다크 토큰입니다. */
 .dark {
   --background: #080b14;
   --foreground: #e0d8c8;
@@ -78,6 +80,7 @@
   --sidebar-ring: #c8966a;
 }
 
+/* CSS 변수 토큰을 Tailwind v4 theme 값으로 연결합니다. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

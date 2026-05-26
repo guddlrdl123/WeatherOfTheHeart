@@ -1,5 +1,7 @@
 import type { ObjectSlotKey, ObjectSlotPosition, RoomObject } from "../types/object";
 
+// 실제 이미지가 생기기 전까지 사용할 임시 오브젝트 카탈로그입니다.
+// allowPrivate/allowPlaza 값으로 개인 방과 광장에서 노출 여부를 나눕니다.
 export const ROOM_OBJECTS: RoomObject[] = [
   {
     objectKey: "wooden_chair",
@@ -147,11 +149,13 @@ export const ROOM_OBJECTS: RoomObject[] = [
   },
 ];
 
+// objectKey로 오브젝트 메타데이터를 빠르게 찾기 위한 조회용 맵입니다.
 export const OBJECT_BY_KEY = ROOM_OBJECTS.reduce<Record<string, RoomObject>>((acc, object) => {
   acc[object.objectKey] = object;
   return acc;
 }, {});
 
+// 개인 방 장면에서 슬롯별 기준 위치를 퍼센트 좌표로 정의합니다.
 export const ROOM_SLOT_POSITIONS: Record<ObjectSlotKey, ObjectSlotPosition> = {
   window: { x: 24, y: 55, offsetX: 0, offsetY: -8 },
   bed: { x: 58, y: 66, offsetX: 8, offsetY: -3 },
@@ -162,6 +166,7 @@ export const ROOM_SLOT_POSITIONS: Record<ObjectSlotKey, ObjectSlotPosition> = {
   corner: { x: 9, y: 75, offsetX: 8, offsetY: 0 },
 };
 
+// 광장은 개인 방보다 넓게 보이도록 별도 좌표를 둡니다.
 export const PLAZA_SLOT_POSITIONS: Record<ObjectSlotKey, ObjectSlotPosition> = {
   window: { x: 18, y: 45, offsetX: 7, offsetY: 8 },
   bed: { x: 56, y: 67, offsetX: 9, offsetY: -5 },

@@ -2,8 +2,10 @@ import { Archive, Mail, PanelsTopLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAppStore } from "../../stores/AppStore";
 
+// mock 사용자 정보와 사용 통계를 보여주는 마이페이지 본문입니다.
 export function ProfileSummary() {
   const { user, memories, plazaEntries, mailboxItems, logout } = useAppStore();
+  // 광장 참여 수는 내가 작성한 entry 수로 계산합니다.
   const myPlazaCount = user ? plazaEntries.filter((entry) => entry.ownerId === user.id).length : 0;
 
   if (!user) {
@@ -56,6 +58,7 @@ export function ProfileSummary() {
   );
 }
 
+// 마이페이지 상단 통계 카드의 반복 UI입니다.
 function StatCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
     <div className="mw-surface rounded-xl p-5">

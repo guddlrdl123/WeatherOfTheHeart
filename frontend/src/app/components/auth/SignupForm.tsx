@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useAppStore } from "../../stores/AppStore";
 
+// mock 회원가입을 수행하고 성공하면 내 방으로 이동시키는 폼입니다.
 export function SignupForm() {
   const { signup, navigate } = useAppStore();
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export function SignupForm() {
     event.preventDefault();
     setError("");
 
+    // 백엔드가 붙기 전에도 사용 흐름을 확인할 수 있도록 기본 검증을 둡니다.
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       setError("올바른 이메일 형식으로 입력해주세요.");
       return;

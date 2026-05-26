@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { PlazaCard } from "../components/plaza/PlazaCard";
 import { useAppStore } from "../stores/AppStore";
 
+// 생성된 광장 목록과 각 광장의 참여 현황을 보여주는 화면입니다.
 export function PlazaListPage() {
   const { plazas, plazaEntries, navigate } = useAppStore();
 
@@ -24,6 +25,7 @@ export function PlazaListPage() {
           <PlazaCard
             key={plaza.id}
             plaza={plaza}
+            // 광장별 참여 수는 entry 목록에서 plazaId로 계산합니다.
             entryCount={plazaEntries.filter((entry) => entry.plazaId === plaza.id).length}
           />
         ))}

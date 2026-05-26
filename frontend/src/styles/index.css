@@ -1,3 +1,4 @@
+/* 전역 CSS를 한 곳에서 불러오는 파일입니다. main.tsx는 이 파일만 import합니다. */
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
