@@ -28,7 +28,7 @@ export function ProfileSummary() {
           </div>
           <div className="flex justify-between gap-4 border-b border-white/7 pb-3">
             <dt className="text-white/34">가입일</dt>
-            <dd className="text-white/58">{user.joinedAt.slice(0, 10).replaceAll("-", ".")}</dd>
+            <dd className="text-white/58">{user.joinedAt.slice(0, 10).replace(/-/g, ".")}</dd>
           </div>
         </dl>
         <button type="button" onClick={logout} className="mw-button mt-7 rounded-md px-5 py-2 text-sm">
