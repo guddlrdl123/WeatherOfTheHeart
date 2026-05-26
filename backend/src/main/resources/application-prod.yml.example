@@ -1,0 +1,27 @@
+server:
+  port: 5000
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION}
+
+aws:
+  s3:
+    bucket: ${S3_BUCKET_NAME}
+    region: ${AWS_REGION}
+
+ai:
+  mode: ${AI_MODE}
