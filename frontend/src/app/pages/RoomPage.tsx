@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, PenLine } from "lucide-react";
+import { CalendarDays, Check, Move, PenLine, X } from "lucide-react";
+import { OBJECT_BY_KEY, ROOM_OBJECTS, ROOM_SLOT_POSITIONS } from "../constants/objects";
 import { WEATHER_BY_KEY } from "../constants/weather";
 import { MemoryPopup } from "../components/room/MemoryPopup";
 import { MemoryWriteModal, type WriteModalValue } from "../components/room/MemoryWriteModal";
@@ -10,14 +11,34 @@ import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
 import { useAppStore } from "../stores/AppStore";
 import { formatDotDate, getTodayString } from "../utils/date";
 
+type RoomPlacementPosition = {
+  x: number;
+  y: number;
+};
+
+const FALLBACK_ROOM_POSITION = { x: 50, y: 68 };
+
 // 개인 방 화면입니다. 캘린더, 방 장면, 글 작성 모달을 한 페이지에서 조율합니다.
 export function RoomPage() {
-  const { selectedDate, setSelectedDate, memories, addMemory, selectedMemory, currentWeather } = useAppStore();
+  const {
+    selectedDate,
+    setSelectedDate,
+    memories,
+    addMemory,
+    updateMemoryPosition,
+    roomObjectPositions,
+    updateRoomObjectPosition,
+    selectedMemory,
+    currentWeather,
+    user,
+  } = useAppStore();
   const initial = new Date(`${selectedDate}T00:00:00`);
   const [viewYear, setViewYear] = useState(initial.getFullYear());
   const [viewMonth, setViewMonth] = useState(initial.getMonth() + 1);
   const [isWriteOpen, setIsWriteOpen] = useState(false);
   const [popupRecord, setPopupRecord] = useState<SceneObjectRecord | null>(null);
+  const [placementPosition, setPlacementPosition] = useState<RoomPlacementPosition | null>(null);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const today = getTodayString();
   const weather = WEATHER_BY_KEY[currentWeather];
@@ -32,19 +53,126 @@ export function RoomPage() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    setPlacementPosition(null);
+    setEditingRecordId(null);
+    setPopupRecord(null);
+  }, [selectedDate]);
+
   // RoomScene은 장면용 record 배열을 받으므로 선택 날짜의 기록을 배열로 변환합니다.
   const sceneRecords = useMemo<SceneObjectRecord[]>(() => {
+    if (user?.isAdmin) {
+      return ROOM_OBJECTS.map((object) => {
+        const savedPosition = roomObjectPositions[object.objectKey];
+
+        return {
+          id: `admin-object-${object.objectKey}`,
+          title: object.name,
+          content: object.description ?? "관리자 계정에서 방에 배치한 사물입니다.",
+          memoryDate: selectedDate,
+          weatherKey: selectedMemory?.weatherKey ?? currentWeather,
+          objectKey: object.objectKey,
+          slotKey: object.slotKey,
+          positionX: savedPosition?.positionX,
+          positionY: savedPosition?.positionY,
+          ownerId: user.id,
+        };
+      });
+    }
+
     if (!selectedMemory) {
       return [];
     }
+
+    const savedPosition = roomObjectPositions[selectedMemory.objectKey];
 
     return [
       {
         ...selectedMemory,
         memoryDate: selectedMemory.memoryDate,
+        positionX: selectedMemory.positionX ?? savedPosition?.positionX,
+        positionY: selectedMemory.positionY ?? savedPosition?.positionY,
       },
     ];
-  }, [selectedMemory]);
+  }, [currentWeather, roomObjectPositions, selectedDate, selectedMemory, user]);
+  const editingRecord = editingRecordId ? sceneRecords.find((record) => record.id === editingRecordId) ?? null : null;
+  const placementRecord: SceneObjectRecord | null =
+    placementPosition && editingRecord
+      ? {
+          ...editingRecord,
+          positionX: placementPosition.x,
+          positionY: placementPosition.y,
+        }
+      : null;
+  const visibleSceneRecords = placementRecord ? sceneRecords.filter((record) => record.id !== placementRecord.id) : sceneRecords;
+
+  function getRecordDefaultPosition(record: SceneObjectRecord) {
+    const savedPosition = roomObjectPositions[record.objectKey];
+    const slotKey = OBJECT_BY_KEY[record.objectKey]?.slotKey ?? record.slotKey;
+    const position = ROOM_SLOT_POSITIONS[slotKey];
+
+    return {
+      x: record.positionX ?? savedPosition?.positionX ?? position?.x ?? FALLBACK_ROOM_POSITION.x,
+      y: record.positionY ?? savedPosition?.positionY ?? position?.y ?? FALLBACK_ROOM_POSITION.y,
+    };
+  }
+
+  function startPositionEdit(record: SceneObjectRecord) {
+    if (!user?.isAdmin && record.id !== selectedMemory?.id) {
+      return;
+    }
+
+    setPopupRecord(null);
+    setEditingRecordId(record.id);
+    setPlacementPosition(getRecordDefaultPosition(record));
+    setToast(user?.isAdmin ? "관리자 기본 위치를 정할 사물을 드래그한 뒤 완료를 눌러주세요." : "사물을 드래그해서 원하는 위치에 놓고 완료를 눌러주세요.");
+  }
+
+  function handleObjectClick(record: SceneObjectRecord) {
+    if (user?.isAdmin || (selectedMemory && record.id === selectedMemory.id)) {
+      startPositionEdit(record);
+      return;
+    }
+
+    setPopupRecord(record);
+  }
+
+  function handleCompletePlacement() {
+    if (!placementPosition || !editingRecord) {
+      return;
+    }
+
+    if (user?.isAdmin) {
+      updateRoomObjectPosition({
+        objectKey: editingRecord.objectKey,
+        positionX: placementPosition.x,
+        positionY: placementPosition.y,
+      });
+      setEditingRecordId(null);
+      setPlacementPosition(null);
+      setToast("관리자 기본 사물 위치가 저장되었어요.");
+      return;
+    }
+
+    if (!selectedMemory) {
+      return;
+    }
+
+    const result = updateMemoryPosition({
+      id: selectedMemory.id,
+      positionX: placementPosition.x,
+      positionY: placementPosition.y,
+    });
+
+    if (!result.ok) {
+      setToast("위치를 저장할 사물을 찾을 수 없어요.");
+      return;
+    }
+
+    setEditingRecordId(null);
+    setPlacementPosition(null);
+    setToast("사물 위치가 저장되었어요.");
+  }
 
   function handlePrevMonth() {
     setViewMonth((month) => {
@@ -139,15 +267,66 @@ export function RoomPage() {
       <div className="min-w-0">
         <RoomScene
           weatherKey={currentWeather}
-          records={sceneRecords}
-          label={selectedMemory ? "창밖의 날씨가 조용히 바뀌었어요." : "아직 이 날의 이야기는 비어 있어요."}
-          onObjectClick={setPopupRecord}
+          records={visibleSceneRecords}
+          placementRecord={placementRecord}
+          onPlacementMove={(position) => setPlacementPosition({ x: position.x, y: position.y })}
+          label={
+            placementPosition
+              ? "사물을 드래그한 뒤 완료를 눌러 위치를 저장하세요."
+              : user?.isAdmin
+                ? "관리자 계정에서는 사물을 눌러 기본 위치를 바꿀 수 있어요."
+                : selectedMemory
+                  ? "사물을 눌러 위치를 바꿀 수 있어요."
+                  : "아직 이 날의 이야기는 비어 있어요."
+          }
+          onObjectClick={handleObjectClick}
         />
-        <div className="mt-4 flex justify-end">
+        {placementPosition && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8bd9a]/25 bg-[#d8bd9a]/10 px-4 py-3">
+            <p className="text-sm leading-6 text-[#e0d2ba]">
+              {user?.isAdmin ? "원하는 위치에 놓은 뒤 완료를 누르면 이 사물의 기본 위치가 저장됩니다." : "원하는 위치에 놓은 뒤 완료를 누르면 이 날짜의 사물 위치가 저장됩니다."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingRecordId(null);
+                  setPlacementPosition(null);
+                }}
+                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
+              >
+                <X size={16} />
+                취소
+              </button>
+              <button type="button" onClick={handleCompletePlacement} className="mw-button-solid inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm">
+                <Check size={16} />
+                완료
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="mt-4 flex flex-wrap justify-end gap-3">
+          {selectedMemory && !user?.isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                const targetRecord = sceneRecords[0];
+
+                if (targetRecord) {
+                  startPositionEdit(targetRecord);
+                }
+              }}
+              disabled={Boolean(placementPosition)}
+              className="mw-button inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <Move size={16} />
+              위치 바꾸기
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsWriteOpen(true)}
-            disabled={Boolean(selectedMemory) || selectedDate > today}
+            disabled={Boolean(selectedMemory) || selectedDate > today || Boolean(placementPosition)}
             className="mw-button-solid inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-35"
           >
             <PenLine size={16} />

@@ -12,7 +12,8 @@ export type CreatePlazaEntryInput = Omit<PlazaEntry, "id" | "createdAt" | "updat
 // 광장과 광장 참여 기록을 localStorage에 저장하는 mock service layer입니다.
 export const plazaService = {
   listPlazas(): Plaza[] {
-    return readStorage<Plaza[]>(PLAZAS_KEY, MOCK_PLAZAS);
+    const plazas = readStorage<Plaza[]>(PLAZAS_KEY, MOCK_PLAZAS);
+    return Array.isArray(plazas) ? plazas : MOCK_PLAZAS;
   },
 
   savePlazas(plazas: Plaza[]) {
@@ -31,7 +32,8 @@ export const plazaService = {
   },
 
   listEntries(): PlazaEntry[] {
-    return readStorage<PlazaEntry[]>(PLAZA_ENTRIES_KEY, MOCK_PLAZA_ENTRIES);
+    const entries = readStorage<PlazaEntry[]>(PLAZA_ENTRIES_KEY, MOCK_PLAZA_ENTRIES);
+    return Array.isArray(entries) ? entries : MOCK_PLAZA_ENTRIES;
   },
 
   saveEntries(entries: PlazaEntry[]) {

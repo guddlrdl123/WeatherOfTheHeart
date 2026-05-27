@@ -1,5 +1,5 @@
 // 방 안에서 오브젝트가 자동 배치될 수 있는 고정 위치 이름입니다.
-export type ObjectSlotKey = "window" | "bed" | "desk" | "wall" | "floor" | "light" | "corner";
+export type ObjectSlotKey = string;
 
 // 사용자가 글을 남길 때 선택할 수 있는 오브젝트 카탈로그 항목입니다.
 export type RoomObject = {
@@ -7,6 +7,8 @@ export type RoomObject = {
   name: string;
   slotKey: ObjectSlotKey;
   icon?: string;
+  imageUrl?: string;
+  imageScale?: number;
   description?: string;
   allowPrivate: boolean;
   allowPlaza: boolean;
@@ -18,4 +20,5 @@ export type ObjectSlotPosition = {
   y: number;
   offsetX: number;
   offsetY: number;
+  zIndex?: number;
 };

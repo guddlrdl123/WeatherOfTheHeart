@@ -23,7 +23,11 @@ export function LoginForm() {
       return;
     }
 
-    login({ email, password });
+    try {
+      login({ email, password });
+    } catch {
+      setError("관리자 비밀번호가 맞지 않습니다.");
+    }
   }
 
   return (

@@ -7,7 +7,8 @@ const MAILBOX_KEY = "maeum-weather:mailbox";
 // 우편함 항목을 localStorage에 저장하는 mock service layer입니다.
 export const mailboxService = {
   list(): MailboxItem[] {
-    return readStorage<MailboxItem[]>(MAILBOX_KEY, MOCK_MAILBOX_ITEMS);
+    const items = readStorage<MailboxItem[]>(MAILBOX_KEY, MOCK_MAILBOX_ITEMS);
+    return Array.isArray(items) ? items : MOCK_MAILBOX_ITEMS;
   },
 
   saveAll(items: MailboxItem[]) {
