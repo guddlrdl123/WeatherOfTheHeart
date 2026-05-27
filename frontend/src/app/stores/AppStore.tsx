@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { authService } from "../services/authService";
 import { mailboxService } from "../services/mailboxService";
-import { type CreateMemoryInput, memoryService } from "../services/memoryService";
+import { type CreateMemoryInput, type UpdateMemoryPositionInput, memoryService } from "../services/memoryService";
 import { type CreatePlazaEntryInput, type CreatePlazaInput, plazaService } from "../services/plazaService";
 import type { AppUser, LoginInput, SignupInput } from "../types/auth";
 import type { MailboxItem } from "../types/mailbox";
@@ -13,6 +13,15 @@ import { getTodayString } from "../utils/date";
 import { readStorage, writeStorage } from "../lib/storage";
 
 export type AppTheme = "dark" | "light";
+export type RoomObjectPosition = {
+  positionX: number;
+  positionY: number;
+};
+export type RoomObjectPositionInput = RoomObjectPosition & {
+  objectKey: string;
+};
+
+const ROOM_OBJECT_POSITIONS_KEY = "maeum-weather:room-object-positions";
 
 // 화면 대부분이 공유하는 전역 상태와 액션의 모양입니다.
 type AppStore = {
@@ -31,6 +40,9 @@ type AppStore = {
   selectedMemory: Memory | null;
   currentWeather: WeatherKey;
   addMemory: (input: CreateMemoryInput) => { ok: true; memory: Memory } | { ok: false; reason: "duplicate" };
+  updateMemoryPosition: (input: UpdateMemoryPositionInput) => { ok: true; memory: Memory } | { ok: false; reason: "not_found" };
+  roomObjectPositions: Record<string, RoomObjectPosition>;
+  updateRoomObjectPosition: (input: RoomObjectPositionInput) => void;
   plazas: Plaza[];
   plazaEntries: PlazaEntry[];
   createPlaza: (input: CreatePlazaInput) => Plaza;
@@ -55,6 +67,11 @@ function getInitialTheme(): AppTheme {
   return readStorage<AppTheme>("maeum-weather:theme", "dark");
 }
 
+function getInitialRoomObjectPositions() {
+  const positions = readStorage<Record<string, RoomObjectPosition>>(ROOM_OBJECT_POSITIONS_KEY, {});
+  return positions && typeof positions === "object" ? positions : {};
+}
+
 // mock service layer에서 초기 데이터를 읽고, 앱 전체 상태를 Context로 내려줍니다.
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<AppRoute>(() => getInitialRoute());
@@ -62,6 +79,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(() => authService.getCurrentUser());
   const [selectedDate, setSelectedDate] = useState(getTodayString);
   const [memories, setMemories] = useState<Memory[]>(() => memoryService.list());
+  const [roomObjectPositions, setRoomObjectPositions] = useState<Record<string, RoomObjectPosition>>(() => getInitialRoomObjectPositions());
   const [plazas, setPlazas] = useState<Plaza[]>(() => plazaService.listPlazas());
   const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
   const [mailboxItems, setMailboxItems] = useState<MailboxItem[]>(() => mailboxService.list());
@@ -143,6 +161,30 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
+  const updateMemoryPosition = useCallback((input: UpdateMemoryPositionInput) => {
+    const result = memoryService.updatePosition(input);
+
+    if (result.ok) {
+      setMemories(memoryService.list());
+    }
+
+    return result;
+  }, []);
+
+  const updateRoomObjectPosition = useCallback((input: RoomObjectPositionInput) => {
+    setRoomObjectPositions((currentPositions) => {
+      const nextPositions = {
+        ...currentPositions,
+        [input.objectKey]: {
+          positionX: input.positionX,
+          positionY: input.positionY,
+        },
+      };
+      writeStorage(ROOM_OBJECT_POSITIONS_KEY, nextPositions);
+      return nextPositions;
+    });
+  }, []);
+
   const createPlaza = useCallback((input: CreatePlazaInput) => {
     const plaza = plazaService.createPlaza(input);
     setPlazas(plazaService.listPlazas());
@@ -181,6 +223,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       selectedMemory,
       currentWeather,
       addMemory,
+      updateMemoryPosition,
+      roomObjectPositions,
+      updateRoomObjectPosition,
       plazas,
       plazaEntries,
       createPlaza,
@@ -203,6 +248,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       selectedMemory,
       currentWeather,
       addMemory,
+      updateMemoryPosition,
+      roomObjectPositions,
+      updateRoomObjectPosition,
       plazas,
       plazaEntries,
       createPlaza,

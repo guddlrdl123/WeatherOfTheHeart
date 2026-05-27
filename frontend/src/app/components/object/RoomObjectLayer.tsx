@@ -1,4 +1,4 @@
-import { PLAZA_SLOT_POSITIONS, ROOM_SLOT_POSITIONS } from "../../constants/objects";
+import { OBJECT_BY_KEY, PLAZA_SLOT_POSITIONS, ROOM_SLOT_POSITIONS } from "../../constants/objects";
 import type { ObjectSlotKey } from "../../types/object";
 import { type SceneObjectRecord, RoomObjectItem } from "./RoomObjectItem";
 
@@ -23,14 +23,36 @@ export function RoomObjectLayer({
   return (
     <>
       {records.map((record) => {
-        const count = slotCounts[record.slotKey] ?? 0;
-        slotCounts[record.slotKey] = count + 1;
-        const position = positions[record.slotKey];
+        const slotKey = OBJECT_BY_KEY[record.objectKey]?.slotKey ?? record.slotKey;
+        const position = positions[slotKey];
+
+        if (typeof record.positionX === "number" && typeof record.positionY === "number") {
+          const faded = Boolean(showMineOnly && myUserId && record.ownerId !== myUserId);
+
+          return (
+            <RoomObjectItem
+              key={record.id}
+              record={record}
+              left={record.positionX}
+              top={record.positionY}
+              zIndex={position?.zIndex}
+              faded={faded}
+              onClick={onObjectClick}
+            />
+          );
+        }
+
+        if (!position) {
+          return null;
+        }
+
+        const count = slotCounts[slotKey] ?? 0;
+        slotCounts[slotKey] = count + 1;
         const left = position.x + position.offsetX * count;
         const top = position.y + position.offsetY * count;
         const faded = Boolean(showMineOnly && myUserId && record.ownerId !== myUserId);
 
-        return <RoomObjectItem key={record.id} record={record} left={left} top={top} faded={faded} onClick={onObjectClick} />;
+        return <RoomObjectItem key={record.id} record={record} left={left} top={top} zIndex={position.zIndex} faded={faded} onClick={onObjectClick} />;
       })}
     </>
   );

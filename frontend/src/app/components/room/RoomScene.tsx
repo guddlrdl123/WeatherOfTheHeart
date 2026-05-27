@@ -1,9 +1,10 @@
+import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { WEATHER_BY_KEY } from "../../constants/weather";
 import { useAppStore } from "../../stores/AppStore";
 import type { WeatherKey } from "../../types/weather";
 import { WeatherEffect } from "./WeatherEffect";
 import { RoomObjectLayer } from "../object/RoomObjectLayer";
-import type { SceneObjectRecord } from "../object/RoomObjectItem";
+import { RoomObjectItem, type SceneObjectRecord } from "../object/RoomObjectItem";
 
 // 라이트 모드에서는 기존 다크 날씨 색을 그대로 쓰면 너무 어두워서 별도 톤을 둡니다.
 const LIGHT_SCENE_TONES: Record<
@@ -60,6 +61,10 @@ const LIGHT_SCENE_TONES: Record<
   },
 };
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 // 창문, 바닥, 침대/광장 바닥, 날씨 효과, 오브젝트 레이어를 합쳐 하나의 장면을 만듭니다.
 export function RoomScene({
   weatherKey,
@@ -69,6 +74,8 @@ export function RoomScene({
   showMineOnly,
   onObjectClick,
   label,
+  placementRecord,
+  onPlacementMove,
 }: {
   weatherKey: WeatherKey;
   records: SceneObjectRecord[];
@@ -77,14 +84,55 @@ export function RoomScene({
   showMineOnly?: boolean;
   onObjectClick: (record: SceneObjectRecord) => void;
   label?: string;
+  placementRecord?: SceneObjectRecord | null;
+  onPlacementMove?: (position: { x: number; y: number }) => void;
 }) {
+  const sceneRef = useRef<HTMLElement | null>(null);
+  const isDraggingPlacementRef = useRef(false);
   const { theme } = useAppStore();
-  const weather = WEATHER_BY_KEY[weatherKey];
+  const safeWeatherKey = WEATHER_BY_KEY[weatherKey] ? weatherKey : "cloudy";
+  const weather = WEATHER_BY_KEY[safeWeatherKey];
   // 현재 테마에 맞춰 방 전체 색감과 창밖 색을 고릅니다.
-  const scene = theme === "light" ? LIGHT_SCENE_TONES[weatherKey] : weather;
+  const scene = theme === "light" ? LIGHT_SCENE_TONES[safeWeatherKey] : weather;
+
+  function updatePlacementPosition(clientX: number, clientY: number) {
+    const rect = sceneRef.current?.getBoundingClientRect();
+
+    if (!rect || !onPlacementMove) {
+      return;
+    }
+
+    const x = clamp(((clientX - rect.left) / rect.width) * 100, 5, 95);
+    const y = clamp(((clientY - rect.top) / rect.height) * 100, 10, 90);
+    onPlacementMove({ x: Math.round(x), y: Math.round(y) });
+  }
+
+  function handlePlacementPointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    isDraggingPlacementRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updatePlacementPosition(event.clientX, event.clientY);
+  }
+
+  function handlePlacementPointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (!isDraggingPlacementRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    updatePlacementPosition(event.clientX, event.clientY);
+  }
+
+  function handlePlacementPointerEnd(event: ReactPointerEvent<HTMLButtonElement>) {
+    isDraggingPlacementRef.current = false;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
 
   return (
     <section
+      ref={sceneRef}
       className="relative min-h-[560px] overflow-hidden rounded-xl border border-white/8"
       style={{
         background: `linear-gradient(160deg, ${scene.wallTop}, ${scene.wall})`,
@@ -96,7 +144,7 @@ export function RoomScene({
       <div className={mode === "plaza" ? "absolute left-[8%] top-[10%] h-[42%] w-[34%]" : "absolute left-[8%] top-[10%] h-[46%] w-[28%]"}>
         <div className="relative h-full w-full overflow-hidden rounded-md border-[9px] border-[rgba(76,61,48,0.78)]">
           <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${scene.windowTop}, ${scene.windowBottom})` }} />
-          <WeatherEffect weatherKey={weatherKey} />
+          <WeatherEffect weatherKey={safeWeatherKey} />
           <span className="absolute inset-y-0 left-1/2 w-[7px] -translate-x-1/2 bg-[rgba(76,61,48,0.72)]" />
           <span className="absolute inset-x-0 top-[47%] h-[7px] -translate-y-1/2 bg-[rgba(76,61,48,0.72)]" />
         </div>
@@ -108,11 +156,6 @@ export function RoomScene({
             className="absolute inset-x-0 bottom-0 h-[35%]"
             style={{ background: `linear-gradient(180deg, ${scene.floor}, ${theme === "light" ? "#b7aa9a" : "#050608"})` }}
           />
-          <div className="absolute bottom-[28%] right-[9%] h-[17%] w-[34%] rounded-t-md border border-white/7 bg-[rgba(213,183,143,0.12)]" />
-          <div className="absolute bottom-[39%] right-[12%] h-[6%] w-[22%] rounded-md bg-[rgba(235,225,207,0.16)]" />
-          <div className="absolute bottom-[38%] right-[7%] h-[8%] w-[10%] rounded-md bg-[rgba(104,136,174,0.14)]" />
-          <div className="absolute bottom-[35%] right-[6%] h-1 w-[42%] bg-[rgba(120,86,54,0.42)]" />
-          <div className="absolute bottom-[25%] right-[6%] h-[10%] w-[42%] bg-[rgba(82,60,40,0.34)]" />
           <div className="absolute right-[9%] top-[18%] h-16 w-[2px] bg-[rgba(224,216,200,0.25)]" />
           <div className="absolute right-[8.2%] top-[30%] h-7 w-7 rounded-full bg-[rgba(223,191,141,0.22)]" />
         </>
@@ -135,6 +178,20 @@ export function RoomScene({
         showMineOnly={showMineOnly}
         onObjectClick={onObjectClick}
       />
+
+      {placementRecord && (
+        <RoomObjectItem
+          record={placementRecord}
+          left={placementRecord.positionX ?? 50}
+          top={placementRecord.positionY ?? 68}
+          isDraft
+          onClick={() => undefined}
+          onPointerDown={handlePlacementPointerDown}
+          onPointerMove={handlePlacementPointerMove}
+          onPointerUp={handlePlacementPointerEnd}
+          onPointerCancel={handlePlacementPointerEnd}
+        />
+      )}
 
       <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-1 text-[0.72rem] text-white/52">
         <span>{weather.icon}</span>

@@ -4,6 +4,7 @@ export type AppUser = {
   email: string;
   nickname: string;
   joinedAt: string;
+  isAdmin?: boolean;
 };
 
 // 로그인 폼에서 서비스로 전달하는 입력값입니다.

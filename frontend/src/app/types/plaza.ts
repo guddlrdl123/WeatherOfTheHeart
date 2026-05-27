@@ -29,6 +29,8 @@ export type PlazaEntry = {
   weatherKey: WeatherKey;
   objectKey: string;
   slotKey: ObjectSlotKey;
+  positionX?: number;
+  positionY?: number;
   createdAt: string;
   updatedAt?: string;
 };

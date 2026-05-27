@@ -20,8 +20,8 @@ export const MOCK_MEMORIES: Memory[] = [
     content: "오후 햇살이 창문으로 길게 들어왔다. 별일 없는 하루였는데 이상하게 마음이 조금 놓였다.",
     moodKey: "sunny",
     weatherKey: "sunny",
-    objectKey: "small_plant",
-    slotKey: "floor",
+    objectKey: "plant",
+    slotKey: "plant",
     createdAt: "2026-05-01T12:30:00.000Z",
   },
   {
@@ -31,8 +31,8 @@ export const MOCK_MEMORIES: Memory[] = [
     content: "비 오는 냄새가 좋아서 창가에 오래 앉아 있었다. 아무것도 하지 않는 시간이 필요했다.",
     moodKey: "rainy",
     weatherKey: "rainy",
-    objectKey: "wooden_chair",
-    slotKey: "window",
+    objectKey: "carpet",
+    slotKey: "carpet",
     createdAt: "2026-05-14T19:20:00.000Z",
   },
   {
@@ -42,8 +42,8 @@ export const MOCK_MEMORIES: Memory[] = [
     content: "일이 조금 버거웠지만 따뜻한 차를 마시고 나니 하루가 덜 거칠게 느껴졌다.",
     moodKey: "sunset",
     weatherKey: "sunset",
-    objectKey: "mug_cup",
-    slotKey: "desk",
+    objectKey: "mug",
+    slotKey: "mug",
     createdAt: "2026-05-20T21:10:00.000Z",
   },
 ];
@@ -95,8 +95,8 @@ export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
     content: "누군가의 밤에 작은 조명이 하나 남았습니다.",
     moodKey: "night",
     weatherKey: "night",
-    objectKey: "stand_lamp",
-    slotKey: "light",
+    objectKey: "curtain",
+    slotKey: "curtain",
     createdAt: "2026-05-09T11:00:00.000Z",
   },
   {
@@ -108,7 +108,7 @@ export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
     moodKey: "cloudy",
     weatherKey: "cloudy",
     objectKey: "letter",
-    slotKey: "wall",
+    slotKey: "letter",
     createdAt: "2026-05-10T11:00:00.000Z",
   },
   {
@@ -120,7 +120,7 @@ export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
     moodKey: "rainy",
     weatherKey: "rainy",
     objectKey: "umbrella",
-    slotKey: "corner",
+    slotKey: "umbrella",
     createdAt: "2026-05-15T11:00:00.000Z",
   },
   {
@@ -131,8 +131,8 @@ export const MOCK_PLAZA_ENTRIES: PlazaEntry[] = [
     content: "끝나기 전의 말들이 낮은 소리로 남았습니다.",
     moodKey: "sunset",
     weatherKey: "sunset",
-    objectKey: "old_radio",
-    slotKey: "desk",
+    objectKey: "radio",
+    slotKey: "radio",
     createdAt: "2026-05-20T11:00:00.000Z",
   },
 ];

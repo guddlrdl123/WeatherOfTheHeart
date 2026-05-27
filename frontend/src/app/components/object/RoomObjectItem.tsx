@@ -1,9 +1,8 @@
+import type { PointerEventHandler } from "react";
 import { OBJECT_BY_KEY } from "../../constants/objects";
 import type { ObjectSlotKey } from "../../types/object";
 import type { WeatherKey } from "../../types/weather";
 
-// RoomScene에 실제로 배치할 수 있는 기록 형태입니다.
-// 개인 방 Memory와 광장 PlazaEntry가 모두 이 모양으로 변환됩니다.
 export type SceneObjectRecord = {
   id: string;
   title?: string;
@@ -12,49 +11,99 @@ export type SceneObjectRecord = {
   weatherKey: WeatherKey;
   objectKey: string;
   slotKey: ObjectSlotKey;
+  positionX?: number;
+  positionY?: number;
   ownerId?: string;
 };
 
-// 방이나 광장 위에 놓이는 오브젝트 하나입니다.
-// hover하면 제목 tooltip을 보여주고, click하면 글 팝업을 엽니다.
 export function RoomObjectItem({
   record,
   left,
   top,
+  zIndex,
   faded,
+  isDraft,
   onClick,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
 }: {
   record: SceneObjectRecord;
   left: number;
   top: number;
+  zIndex?: number;
   faded?: boolean;
+  isDraft?: boolean;
   onClick: (record: SceneObjectRecord) => void;
+  onPointerDown?: PointerEventHandler<HTMLButtonElement>;
+  onPointerMove?: PointerEventHandler<HTMLButtonElement>;
+  onPointerUp?: PointerEventHandler<HTMLButtonElement>;
+  onPointerCancel?: PointerEventHandler<HTMLButtonElement>;
 }) {
   const object = OBJECT_BY_KEY[record.objectKey];
   const title = record.title?.trim() || "제목 없는 기억";
+  const baseImageSize = object?.objectKey === "carpet" ? { width: 76, height: 58 } : { width: 62, height: 62 };
+  const imageScale = object?.imageScale ?? 1.35;
+  const imageSize = {
+    width: Math.round(baseImageSize.width * imageScale),
+    height: Math.round(baseImageSize.height * imageScale),
+  };
+  const hitAreaSize = Math.max(72, Math.max(imageSize.width, imageSize.height));
 
   return (
     <button
       type="button"
-      className="group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition"
+      className={`group absolute -translate-x-1/2 -translate-y-1/2 transition ${
+        isDraft ? "z-30 cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer"
+      }`}
       style={{
         left: `${left}%`,
         top: `${top}%`,
+        zIndex,
         opacity: faded ? 0.28 : 1,
       }}
-      onClick={() => onClick(record)}
-      aria-label={`${object?.name ?? "오브젝트"} 글 보기`}
+      onClick={() => {
+        if (!isDraft) {
+          onClick(record);
+        }
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      aria-label={isDraft ? `${object?.name ?? "오브젝트"} 위치 옮기기` : `${object?.name ?? "오브젝트"} 기억 보기`}
     >
       <span
-        className="block text-center transition-transform group-hover:scale-110"
+        className={`flex items-center justify-center transition-transform group-hover:scale-110 ${
+          isDraft ? "rounded-full ring-2 ring-[#d8bd9a]/70 ring-offset-4 ring-offset-transparent" : ""
+        }`}
         style={{
-          minWidth: 34,
-          fontSize: object?.objectKey === "rug" ? "2.2rem" : "1.9rem",
-          color: "#d8bd9a",
-          fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif',
+          minWidth: hitAreaSize,
+          minHeight: hitAreaSize,
         }}
       >
-        {object?.icon ?? "•"}
+        {object?.imageUrl ? (
+          <img
+            src={object.imageUrl}
+            alt=""
+            draggable={false}
+            className="object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.36)]"
+            style={imageSize}
+          />
+        ) : (
+          <span
+            className="block text-center"
+            style={{
+              minWidth: 34,
+              fontSize: object?.objectKey === "carpet" ? "2.2rem" : "1.9rem",
+              color: "#d8bd9a",
+              fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif',
+            }}
+          >
+            {object?.icon ?? "?"}
+          </span>
+        )}
       </span>
       <span className="pointer-events-none absolute left-1/2 top-full mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#101421] px-2 py-1 text-[0.68rem] text-[#e0d8c8] group-hover:block">
         {title}

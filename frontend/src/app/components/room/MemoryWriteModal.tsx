@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { OBJECT_BY_KEY } from "../../constants/objects";
+import { OBJECT_BY_KEY, ROOM_OBJECTS } from "../../constants/objects";
 import { WEATHER_OPTIONS } from "../../constants/weather";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import type { Memory } from "../../types/memory";
@@ -18,6 +18,8 @@ export type WriteModalValue = {
   weatherKey: WeatherKey;
   objectKey: string;
   slotKey: ObjectSlotKey;
+  positionX?: number;
+  positionY?: number;
 };
 
 // 작은 메모지처럼 동작하는 글 작성 모달입니다.
@@ -42,7 +44,7 @@ export function MemoryWriteModal({
   const [content, setContent] = useState("");
   const [moodKey, setMoodKey] = useState<MoodKey>("rainy");
   const [weatherKey, setWeatherKey] = useState<WeatherKey>("rainy");
-  const [objectKey, setObjectKey] = useState("wooden_chair");
+  const [objectKey, setObjectKey] = useState(ROOM_OBJECTS[0]?.objectKey ?? "carpet");
   const [error, setError] = useState("");
   const today = useMemo(getTodayString, []);
 
@@ -70,7 +72,12 @@ export function MemoryWriteModal({
       return;
     }
 
-    const object = OBJECT_BY_KEY[objectKey];
+    const object = OBJECT_BY_KEY[objectKey] ?? ROOM_OBJECTS[0];
+
+    if (!object) {
+      setError("선택할 수 있는 사물이 없습니다.");
+      return;
+    }
     // 오브젝트의 slotKey를 함께 넘겨 RoomScene이 고정 위치에 자동 배치할 수 있게 합니다.
     onSave({
       memoryDate,
@@ -174,6 +181,7 @@ export function MemoryWriteModal({
               <p className="mb-2 text-sm text-white/54">이야기를 담을 오브젝트를 골라주세요.</p>
               <ObjectPicker value={objectKey} scope={mode} onChange={(object) => setObjectKey(object.objectKey)} />
             </div>
+
           </div>
         </div>
 
