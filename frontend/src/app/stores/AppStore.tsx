@@ -41,7 +41,7 @@ type AppStore = {
   memories: Memory[];
   selectedMemory: Memory | null;
   currentWeather: WeatherKey;
-  addMemory: (input: CreateMemoryInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" }>;
+  addMemory: (input: CreateMemoryInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" | "duplicate_object" }>;
   updateMemoryPosition: (input: UpdateMemoryPositionInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "not_found" }>;
   roomObjectPositions: Record<string, RoomObjectPosition>;
   updateRoomObjectPosition: (input: RoomObjectPositionInput) => void;

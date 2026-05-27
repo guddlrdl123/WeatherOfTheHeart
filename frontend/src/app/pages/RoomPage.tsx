@@ -44,6 +44,15 @@ export function RoomPage() {
   const [toast, setToast] = useState("");
   const today = getTodayString();
   const weather = WEATHER_BY_KEY[currentWeather];
+  const viewMonthKey = `${viewYear}-${String(viewMonth).padStart(2, "0")}`;
+  const selectedMonthKey = selectedDate.slice(0, 7);
+  const accumulatedMemories = useMemo(
+    () =>
+      memories
+        .filter((memory) => memory.memoryDate.startsWith(`${selectedMonthKey}-`) && memory.memoryDate <= selectedDate)
+        .sort((a, b) => a.memoryDate.localeCompare(b.memoryDate)),
+    [memories, selectedDate, selectedMonthKey],
+  );
 
   // 저장 완료/중복 안내 토스트는 잠깐 보여준 뒤 사라지게 합니다.
   useEffect(() => {
@@ -59,9 +68,9 @@ export function RoomPage() {
     setPlacementPosition(null);
     setEditingRecordId(null);
     setPopupRecord(null);
-  }, [selectedDate]);
+  }, [selectedDate, viewMonthKey]);
 
-  // RoomScene은 장면용 record 배열을 받으므로 선택 날짜의 기록을 배열로 변환합니다.
+  // RoomScene은 장면용 record 배열을 받으므로 선택한 날짜까지의 기록을 배열로 변환합니다.
   const sceneRecords = useMemo<SceneObjectRecord[]>(() => {
     if (user?.isAdmin) {
       return ROOM_OBJECTS.map((object) => {
@@ -84,23 +93,19 @@ export function RoomPage() {
       });
     }
 
-    if (!selectedMemory) {
-      return [];
-    }
+    return accumulatedMemories.map((memory) => {
+      const savedPosition = roomObjectPositions[memory.objectKey];
 
-    const savedPosition = roomObjectPositions[selectedMemory.objectKey];
-
-    return [
-      {
-        ...selectedMemory,
-        memoryDate: selectedMemory.memoryDate,
-        positionX: selectedMemory.positionX ?? savedPosition?.positionX,
-        positionY: selectedMemory.positionY ?? savedPosition?.positionY,
-        flipX: selectedMemory.flipX ?? savedPosition?.flipX,
-        tiltDeg: selectedMemory.tiltDeg ?? savedPosition?.tiltDeg,
-      },
-    ];
-  }, [currentWeather, roomObjectPositions, selectedDate, selectedMemory, user]);
+      return {
+        ...memory,
+        positionX: memory.positionX ?? savedPosition?.positionX,
+        positionY: memory.positionY ?? savedPosition?.positionY,
+        flipX: memory.flipX ?? savedPosition?.flipX,
+        tiltDeg: memory.tiltDeg ?? savedPosition?.tiltDeg,
+      };
+    });
+  }, [accumulatedMemories, currentWeather, roomObjectPositions, selectedDate, selectedMemory, user]);
+  const selectedSceneRecord = selectedMemory ? sceneRecords.find((record) => record.id === selectedMemory.id) ?? null : null;
   const editingRecord = editingRecordId ? sceneRecords.find((record) => record.id === editingRecordId) ?? null : null;
   const placementRecord: SceneObjectRecord | null =
     placementPosition && editingRecord
@@ -167,12 +172,8 @@ export function RoomPage() {
       return;
     }
 
-    if (!selectedMemory) {
-      return;
-    }
-
     const result = await updateMemoryPosition({
-      id: selectedMemory.id,
+      id: editingRecord.id,
       positionX: placementPosition.x,
       positionY: placementPosition.y,
       flipX: placementPosition.flipX,
@@ -294,7 +295,7 @@ export function RoomPage() {
               ? "사물을 드래그한 뒤 완료를 눌러 위치를 저장하세요."
               : user?.isAdmin
                 ? "관리자 계정에서는 사물을 눌러 기본 위치를 바꿀 수 있어요."
-                : selectedMemory
+                : visibleSceneRecords.length > 0
                   ? "사물을 누르면 남긴 글을 볼 수 있어요."
                   : "아직 이 날의 이야기는 비어 있어요."
           }
@@ -357,15 +358,11 @@ export function RoomPage() {
           </div>
         )}
         <div className="mt-4 flex flex-wrap justify-end gap-3">
-          {selectedMemory && !user?.isAdmin && (
+          {selectedSceneRecord && !user?.isAdmin && (
             <button
               type="button"
               onClick={() => {
-                const targetRecord = sceneRecords[0];
-
-                if (targetRecord) {
-                  startPositionEdit(targetRecord);
-                }
+                startPositionEdit(selectedSceneRecord);
               }}
               disabled={Boolean(placementPosition)}
               className="mw-button inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-35"
@@ -390,6 +387,7 @@ export function RoomPage() {
         <MemoryWriteModal
           initialDate={selectedDate}
           existingMemory={selectedMemory}
+          privateMemories={memories}
           onClose={() => setIsWriteOpen(false)}
           onSave={handleSave}
         />

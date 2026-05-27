@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { OBJECT_BY_KEY, ROOM_OBJECTS } from "../../constants/objects";
 import { WEATHER_OPTIONS } from "../../constants/weather";
@@ -29,6 +29,7 @@ export function MemoryWriteModal({
   initialDate,
   existingMemory,
   existingNotice,
+  privateMemories = [],
   onClose,
   onSave,
 }: {
@@ -36,6 +37,7 @@ export function MemoryWriteModal({
   initialDate: string;
   existingMemory?: Memory | null;
   existingNotice?: string;
+  privateMemories?: Memory[];
   onClose: () => void;
   onSave: (value: WriteModalValue) => void;
 }) {
@@ -47,8 +49,32 @@ export function MemoryWriteModal({
   const [objectKey, setObjectKey] = useState(ROOM_OBJECTS[0]?.objectKey ?? "carpet");
   const [error, setError] = useState("");
   const today = useMemo(getTodayString, []);
+  const disabledObjectKeys = useMemo(() => {
+    if (mode !== "private") {
+      return [];
+    }
+
+    const monthKey = memoryDate.slice(0, 7);
+
+    return privateMemories
+      .filter((memory) => memory.memoryDate.startsWith(`${monthKey}-`) && memory.id !== existingMemory?.id)
+      .map((memory) => memory.objectKey);
+  }, [existingMemory?.id, memoryDate, mode, privateMemories]);
+  const disabledObjectKeySet = useMemo(() => new Set(disabledObjectKeys), [disabledObjectKeys]);
 
   useEscapeKey(onClose);
+
+  useEffect(() => {
+    if (mode !== "private" || !disabledObjectKeySet.has(objectKey)) {
+      return;
+    }
+
+    const nextObject = ROOM_OBJECTS.find((object) => object.allowPrivate && !disabledObjectKeySet.has(object.objectKey));
+
+    if (nextObject) {
+      setObjectKey(nextObject.objectKey);
+    }
+  }, [disabledObjectKeySet, mode, objectKey]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,6 +105,11 @@ export function MemoryWriteModal({
       return;
     }
     // 오브젝트의 slotKey를 함께 넘겨 RoomScene이 고정 위치에 자동 배치할 수 있게 합니다.
+    if (mode === "private" && disabledObjectKeySet.has(object.objectKey)) {
+      setError("이번 달 방에 이미 놓은 사물이에요. 다른 사물을 골라주세요.");
+      return;
+    }
+
     onSave({
       memoryDate,
       title: title.trim() || undefined,
@@ -179,7 +210,7 @@ export function MemoryWriteModal({
 
             <div>
               <p className="mb-2 text-sm text-white/54">이야기를 담을 오브젝트를 골라주세요.</p>
-              <ObjectPicker value={objectKey} scope={mode} onChange={(object) => setObjectKey(object.objectKey)} />
+              <ObjectPicker value={objectKey} scope={mode} disabledObjectKeys={disabledObjectKeys} onChange={(object) => setObjectKey(object.objectKey)} />
             </div>
 
           </div>
