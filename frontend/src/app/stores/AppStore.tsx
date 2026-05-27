@@ -33,16 +33,16 @@ type AppStore = {
   setTheme: (theme: AppTheme) => void;
   toggleTheme: () => void;
   user: AppUser | null;
-  login: (input: LoginInput) => AppUser;
-  signup: (input: SignupInput) => AppUser;
+  login: (input: LoginInput) => Promise<AppUser>;
+  signup: (input: SignupInput) => Promise<AppUser>;
   logout: () => void;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   memories: Memory[];
   selectedMemory: Memory | null;
   currentWeather: WeatherKey;
-  addMemory: (input: CreateMemoryInput) => { ok: true; memory: Memory } | { ok: false; reason: "duplicate" };
-  updateMemoryPosition: (input: UpdateMemoryPositionInput) => { ok: true; memory: Memory } | { ok: false; reason: "not_found" };
+  addMemory: (input: CreateMemoryInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" }>;
+  updateMemoryPosition: (input: UpdateMemoryPositionInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "not_found" }>;
   roomObjectPositions: Record<string, RoomObjectPosition>;
   updateRoomObjectPosition: (input: RoomObjectPositionInput) => void;
   plazas: Plaza[];
@@ -74,13 +74,13 @@ function getInitialRoomObjectPositions() {
   return positions && typeof positions === "object" ? positions : {};
 }
 
-// mock service layer에서 초기 데이터를 읽고, 앱 전체 상태를 Context로 내려줍니다.
+// 백엔드 API와 일부 로컬 UI 설정을 조합해 앱 전체 상태를 Context로 내려줍니다.
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<AppRoute>(() => getInitialRoute());
   const [theme, setThemeState] = useState<AppTheme>(() => getInitialTheme());
   const [user, setUser] = useState<AppUser | null>(() => authService.getCurrentUser());
   const [selectedDate, setSelectedDate] = useState(getTodayString);
-  const [memories, setMemories] = useState<Memory[]>(() => memoryService.list());
+  const [memories, setMemories] = useState<Memory[]>([]);
   const [roomObjectPositions, setRoomObjectPositions] = useState<Record<string, RoomObjectPosition>>(() => getInitialRoomObjectPositions());
   const [plazas, setPlazas] = useState<Plaza[]>(() => plazaService.listPlazas());
   const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
@@ -104,6 +104,33 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     writeStorage("maeum-weather:theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    if (!user || user.isAdmin) {
+      setMemories([]);
+      return;
+    }
+
+    let ignore = false;
+
+    // 이번 DB 저장 변경: 로그인된 사용자 id로 서버의 private_memories 목록을 불러옵니다.
+    memoryService
+      .list(user.id)
+      .then((nextMemories) => {
+        if (!ignore) {
+          setMemories(nextMemories);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMemories([]);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user]);
+
   const setTheme = useCallback((nextTheme: AppTheme) => {
     setThemeState(nextTheme);
   }, []);
@@ -119,8 +146,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    (input: LoginInput) => {
-      const nextUser = authService.login(input);
+    async (input: LoginInput) => {
+      const nextUser = await authService.login(input);
       setUser(nextUser);
       navigate("/room");
       return nextUser;
@@ -129,8 +156,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const signup = useCallback(
-    (input: SignupInput) => {
-      const nextUser = authService.signup(input);
+    async (input: SignupInput) => {
+      const nextUser = await authService.signup(input);
       setUser(nextUser);
       navigate("/room");
       return nextUser;
@@ -152,26 +179,36 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // 선택된 날짜의 기록이 있으면 그 기록의 날씨를, 없으면 기본 흐림 날씨를 사용합니다.
   const currentWeather = selectedMemory?.weatherKey ?? "cloudy";
 
-  const addMemory = useCallback((input: CreateMemoryInput) => {
-    const result = memoryService.create(input);
+  const addMemory = useCallback(async (input: CreateMemoryInput) => {
+    if (!user || user.isAdmin) {
+      return { ok: false as const, reason: "duplicate" as const };
+    }
+
+    // localStorage 대신 백엔드 POST 결과를 기준으로 화면 상태를 갱신합니다.
+    const result = await memoryService.create(user.id, input);
 
     // 저장 성공 후에는 service에서 다시 목록을 읽어 화면 상태를 최신화합니다.
     if (result.ok) {
-      setMemories(memoryService.list());
+      setMemories(await memoryService.list(user.id));
     }
 
     return result;
-  }, []);
+  }, [user]);
 
-  const updateMemoryPosition = useCallback((input: UpdateMemoryPositionInput) => {
-    const result = memoryService.updatePosition(input);
+  const updateMemoryPosition = useCallback(async (input: UpdateMemoryPositionInput) => {
+    if (!user || user.isAdmin) {
+      return { ok: false as const, reason: "not_found" as const };
+    }
+
+    // 위치 변경도 서버에 저장해 새로고침 후 같은 배치가 유지되게 합니다.
+    const result = await memoryService.updatePosition(user.id, input);
 
     if (result.ok) {
-      setMemories(memoryService.list());
+      setMemories(await memoryService.list(user.id));
     }
 
     return result;
-  }, []);
+  }, [user]);
 
   const updateRoomObjectPosition = useCallback((input: RoomObjectPositionInput) => {
     setRoomObjectPositions((currentPositions) => {

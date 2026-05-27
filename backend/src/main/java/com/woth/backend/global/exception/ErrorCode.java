@@ -10,6 +10,8 @@ public enum ErrorCode {
     USER_NOT_FOUND("USER_001", "존재하지 않는 유저입니다."),
     USER_ALREADY_EXISTS("USER_002", "이미 등록된 이메일입니다."),
     MEMORY_DUPLICATE("MEMORY_001", "이미 해당 날짜에 기록이 존재합니다."),
+    // 위치 수정 요청에서 해당 사용자의 기억을 찾지 못했을 때 사용합니다.
+    MEMORY_NOT_FOUND("MEMORY_002", "존재하지 않는 기억입니다."),
     PLAZA_NOT_FOUND("PLAZA_001", "존재하지 않는 광장입니다."),
     PLAZA_ALREADY_JOINED("PLAZA_002", "이미 이 광장에 참여한 상태입니다."),
     PLAZA_COMPLETE("PLAZA_003", "광장이 이미 완료되었습니다."),

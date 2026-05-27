@@ -51,6 +51,18 @@ public class PrivateMemory {
     @Column(name = "image_url", length = 255)
     private String imageUrl; // S3에 업로드된 첨부 이미지 경로
 
+    @Column(name = "position_x")
+    private Integer positionX; // 방 안 오브젝트의 X 좌표
+
+    @Column(name = "position_y")
+    private Integer positionY; // 방 안 오브젝트의 Y 좌표
+
+    @Column(name = "flip_x")
+    private Boolean flipX; // 오브젝트 좌우 반전 여부
+
+    @Column(name = "tilt_deg")
+    private Integer tiltDeg; // 오브젝트 기울기 각도
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -68,5 +80,13 @@ public class PrivateMemory {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updatePosition(Integer positionX, Integer positionY, Boolean flipX, Integer tiltDeg) {
+        // 위치 편집 완료 시 프론트에서 전달한 배치 상태를 엔티티에 반영합니다.
+        this.positionX = positionX;
+        this.positionY = positionY;
+        this.flipX = flipX;
+        this.tiltDeg = tiltDeg;
     }
 }

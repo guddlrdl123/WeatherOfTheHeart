@@ -1,6 +1,6 @@
-import { MOCK_USER } from "../constants/mockData";
 import type { AppUser, LoginInput, SignupInput } from "../types/auth";
-import { createId, readStorage, writeStorage } from "../lib/storage";
+import { readStorage, writeStorage } from "../lib/storage";
+import { requestApi } from "./api";
 
 const USER_KEY = "maeum-weather:user";
 const ADMIN_EMAIL = "admin@maeum.weather";
@@ -19,7 +19,24 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-// 실제 인증 API가 생기기 전까지 localStorage로 동작하는 mock auth 서비스입니다.
+type AuthResponse = {
+  id: number;
+  email: string;
+  nickname: string;
+  joinedAt: string;
+};
+
+function toAppUser(response: AuthResponse): AppUser {
+  // 백엔드 DB id는 숫자지만 기존 프론트 타입과 맞추기 위해 문자열로 보관합니다.
+  return {
+    id: String(response.id),
+    email: response.email,
+    nickname: response.nickname,
+    joinedAt: response.joinedAt,
+  };
+}
+
+// 이번 API 연동 변경: 인증은 백엔드 API를 호출하고, 새로고침 복원을 위해 현재 사용자만 localStorage에 보관합니다.
 export const authService = {
   getCurrentUser(): AppUser | null {
     const user = readStorage<AppUser | null>(USER_KEY, null);
@@ -28,10 +45,16 @@ export const authService = {
       return ADMIN_USER;
     }
 
+    // 예전 mock 로그인 id("me")가 남아 있으면 /api/users/me 요청으로 500이 나므로 자동 정리합니다.
+    if (user && !/^\d+$/.test(user.id)) {
+      writeStorage<AppUser | null>(USER_KEY, null);
+      return null;
+    }
+
     return user;
   },
 
-  login(input: LoginInput): AppUser {
+  async login(input: LoginInput): Promise<AppUser> {
     const email = normalizeEmail(input.email);
 
     if (email === ADMIN_EMAIL && input.password !== ADMIN_PASSWORD) {
@@ -43,29 +66,28 @@ export const authService = {
       return ADMIN_USER;
     }
 
-    const saved = this.getCurrentUser();
-
-    // 이미 저장된 사용자가 같은 이메일이면 그 사용자를 그대로 로그인시킵니다.
-    if (saved && saved.email === email) {
-      return saved;
-    }
-
-    const user: AppUser = {
-      ...MOCK_USER,
-      email,
-    };
+    // mock 로그인 대신 DB에 저장된 유저를 백엔드에서 조회합니다.
+    const user = toAppUser(await requestApi<AuthResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        password: input.password,
+      }),
+    }));
     writeStorage(USER_KEY, user);
     return user;
   },
 
-  signup(input: SignupInput): AppUser {
-    // 회원가입은 새 사용자 id와 가입 시각을 만들어 저장합니다.
-    const user: AppUser = {
-      id: createId("user"),
-      email: normalizeEmail(input.email),
-      nickname: input.nickname.trim(),
-      joinedAt: new Date().toISOString(),
-    };
+  async signup(input: SignupInput): Promise<AppUser> {
+    // 회원가입도 백엔드에 저장된 사용자 id를 받아 이후 메모리 API의 userId로 사용합니다.
+    const user = toAppUser(await requestApi<AuthResponse>("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({
+        email: normalizeEmail(input.email),
+        password: input.password,
+        nickname: input.nickname.trim(),
+      }),
+    }));
     writeStorage(USER_KEY, user);
     return user;
   },

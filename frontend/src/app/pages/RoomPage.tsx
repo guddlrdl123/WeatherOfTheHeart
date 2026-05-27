@@ -148,7 +148,7 @@ export function RoomPage() {
     setPopupRecord(record);
   }
 
-  function handleCompletePlacement() {
+  async function handleCompletePlacement() {
     if (!placementPosition || !editingRecord) {
       return;
     }
@@ -171,7 +171,7 @@ export function RoomPage() {
       return;
     }
 
-    const result = updateMemoryPosition({
+    const result = await updateMemoryPosition({
       id: selectedMemory.id,
       positionX: placementPosition.x,
       positionY: placementPosition.y,
@@ -218,8 +218,8 @@ export function RoomPage() {
     });
   }
 
-  function handleSave(value: WriteModalValue) {
-    const result = addMemory(value);
+  async function handleSave(value: WriteModalValue) {
+    const result = await addMemory(value);
 
     if (!result.ok) {
       // 같은 날짜에 이미 기록이 있으면 새 기록을 만들지 않습니다.
