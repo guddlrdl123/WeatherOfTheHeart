@@ -28,6 +28,9 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// LangChain4j OpenAI 스타터
+	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:0.31.0'
 }
 
 tasks.named('test') {
