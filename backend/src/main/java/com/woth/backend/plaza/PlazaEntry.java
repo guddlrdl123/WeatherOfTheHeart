@@ -1,14 +1,13 @@
 package com.woth.backend.plaza;
 
 import com.woth.backend.user.User;
-import com.woth.backend.memory.PrivateMemory;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 /**
  * [plaza_entries 테이블 매핑 엔티티]
- * 유저가 특정 광장에 자신의 일기(기록)를 공유하여 입장한 게시글 데이터입니다.
+ * 유저가 특정 광장에 자신의 이야기를 남긴 게시글 데이터입니다.
  */
 @Entity
 @Table(name = "plaza_entries")
@@ -28,12 +27,26 @@ public class PlazaEntry {
     private Plaza plaza;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "private_memory_id", nullable = false)
-    private PrivateMemory privateMemory;
+    @Column(length = 100)
+    private String title;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "mood_key", nullable = false, length = 50)
+    private String moodKey;
+
+    @Column(name = "weather_key", nullable = false, length = 50)
+    private String weatherKey;
+
+    @Column(name = "object_key", nullable = false, length = 100)
+    private String objectKey;
+
+    @Column(name = "slot_key", nullable = false, length = 100)
+    private String slotKey;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
