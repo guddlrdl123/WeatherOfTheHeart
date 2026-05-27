@@ -31,6 +31,12 @@ dependencies {
 
 	// LangChain4j OpenAI 스타터
 	implementation 'dev.langchain4j:langchain4j-open-ai-spring-boot-starter:0.31.0'
+
+	// AI 서비스 호출 및 비동기 통신을 위해 WebFlux 추가
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// JSON 데이터를 Java 객체로 변환(ObjectMapper, JsonNode 등 Jackson 기능 제공)
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 tasks.named('test') {
