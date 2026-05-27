@@ -33,8 +33,17 @@ public class PrivateMemory {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content; // 일기 본문 내용
 
-    @Column(nullable = false, length = 30)
-    private String mood; // 마음 상태 / 감정 태그 (예: sunny, rainy 등)
+    @Column(name = "mood_key", nullable = false, length = 50)
+    private String moodKey; // 마음 상태 / 감정 태그
+
+    @Column(name = "weather_key", nullable = false, length = 50)
+    private String weatherKey; // 방의 날씨 키
+
+    @Column(name = "object_key", nullable = false, length = 100)
+    private String objectKey; // 선택된 오브젝트 키
+
+    @Column(name = "slot_key", nullable = false, length = 100)
+    private String slotKey; // 선택된 슬롯 키
 
     @Column(name = "memory_date", nullable = false)
     private LocalDate memoryDate; // 일기를 기록한 날짜 (연-월-일)
