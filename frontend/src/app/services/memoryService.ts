@@ -1,10 +1,6 @@
-import { MOCK_MEMORIES } from "../constants/mockData";
 import type { Memory } from "../types/memory";
-import { createId, readStorage, writeStorage } from "../lib/storage";
+import { requestApi } from "./api";
 
-const MEMORIES_KEY = "maeum-weather:memories";
-
-// id와 생성 시각은 서비스가 자동으로 채우므로 입력 타입에서는 제외합니다.
 export type CreateMemoryInput = Omit<Memory, "id" | "createdAt" | "updatedAt">;
 export type UpdateMemoryPositionInput = {
   id: string;
@@ -14,51 +10,80 @@ export type UpdateMemoryPositionInput = {
   tiltDeg?: number;
 };
 
-// 개인 방 기록을 localStorage에 저장하는 mock service layer입니다.
+type MemoryResponse = {
+  id: number;
+  memoryDate: string;
+  title?: string;
+  content: string;
+  moodKey: Memory["moodKey"];
+  weatherKey: Memory["weatherKey"];
+  objectKey: string;
+  slotKey: Memory["slotKey"];
+  positionX?: number;
+  positionY?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+function toMemory(response: MemoryResponse): Memory {
+  return {
+    ...response,
+    id: String(response.id),
+  };
+}
+
 export const memoryService = {
-  list(): Memory[] {
-    const memories = readStorage<Memory[]>(MEMORIES_KEY, MOCK_MEMORIES);
-    return Array.isArray(memories) ? memories : MOCK_MEMORIES;
+  async list(userId: string): Promise<Memory[]> {
+    const memories = await requestApi<MemoryResponse[]>(`/api/users/${userId}/memories`);
+    return memories.map(toMemory);
   },
 
-  saveAll(memories: Memory[]) {
-    writeStorage(MEMORIES_KEY, memories);
-  },
+  async create(userId: string, input: CreateMemoryInput): Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" | "duplicate_object" }> {
+    const memories = await this.list(userId);
 
-  create(input: CreateMemoryInput): { ok: true; memory: Memory } | { ok: false; reason: "duplicate" } {
-    const memories = this.list();
-
-    // 현재 목업 정책: 같은 날짜에는 기록을 하나만 남길 수 있습니다.
     if (memories.some((memory) => memory.memoryDate === input.memoryDate)) {
       return { ok: false, reason: "duplicate" };
     }
 
-    const memory: Memory = {
-      ...input,
-      id: createId("memory"),
-      createdAt: new Date().toISOString(),
-    };
-    this.saveAll([...memories, memory]);
-    return { ok: true, memory };
-  },
+    const inputMonth = input.memoryDate.slice(0, 7);
 
-  updatePosition(input: UpdateMemoryPositionInput): { ok: true; memory: Memory } | { ok: false; reason: "not_found" } {
-    const memories = this.list();
-    const target = memories.find((memory) => memory.id === input.id);
-
-    if (!target) {
-      return { ok: false, reason: "not_found" };
+    if (memories.some((memory) => memory.memoryDate.slice(0, 7) === inputMonth && memory.objectKey === input.objectKey)) {
+      return { ok: false, reason: "duplicate_object" };
     }
 
-    const updatedMemory: Memory = {
-      ...target,
-      positionX: input.positionX,
-      positionY: input.positionY,
-      flipX: input.flipX,
-      tiltDeg: input.tiltDeg,
-      updatedAt: new Date().toISOString(),
-    };
-    this.saveAll(memories.map((memory) => (memory.id === input.id ? updatedMemory : memory)));
-    return { ok: true, memory: updatedMemory };
+    try {
+      const memory = await requestApi<MemoryResponse>(`/api/users/${userId}/memories`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      return { ok: true, memory: toMemory(memory) };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("이미 해당 날짜")) {
+        return { ok: false, reason: "duplicate" };
+      }
+      throw error;
+    }
+  },
+
+  async updatePosition(userId: string, input: UpdateMemoryPositionInput): Promise<{ ok: true; memory: Memory } | { ok: false; reason: "not_found" }> {
+    try {
+      const memory = await requestApi<MemoryResponse>(`/api/users/${userId}/memories/${input.id}/position`, {
+        method: "PUT",
+        body: JSON.stringify({
+          positionX: input.positionX,
+          positionY: input.positionY,
+          flipX: input.flipX,
+          tiltDeg: input.tiltDeg,
+        }),
+      });
+      return { ok: true, memory: toMemory(memory) };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("존재하지 않는 기억")) {
+        return { ok: false, reason: "not_found" };
+      }
+      throw error;
+    }
   },
 };

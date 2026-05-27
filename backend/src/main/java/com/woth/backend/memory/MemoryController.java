@@ -33,6 +33,7 @@ public class MemoryController {
 
     @PostMapping
     public ApiResponse<MemoryResponse> create(@PathVariable Long userId, @RequestBody MemoryRequest request) {
+        // 이번 API 연동 변경: 프론트의 "방에 남기기" 요청을 private_memories 저장으로 연결합니다.
         var memory = memoryService.createMemory(userId, new MemoryService.CreateMemoryRequest(
                 request.memoryDate(),
                 request.title(),
@@ -40,12 +41,31 @@ public class MemoryController {
                 request.moodKey(),
                 request.weatherKey(),
                 request.objectKey(),
-                request.slotKey()
+                request.slotKey(),
+                request.positionX(),
+                request.positionY()
+        ));
+        return ApiResponse.success(toResponse(memory));
+    }
+
+    @PutMapping("/{memoryId}/position")
+    public ApiResponse<MemoryResponse> updatePosition(
+            @PathVariable Long userId,
+            @PathVariable Long memoryId,
+            @RequestBody MemoryPositionRequest request
+    ) {
+        // 이번 위치 저장 변경: 드래그로 바꾼 오브젝트 위치를 DB에 반영합니다.
+        var memory = memoryService.updateMemoryPosition(userId, memoryId, new MemoryService.UpdateMemoryPositionRequest(
+                request.positionX(),
+                request.positionY(),
+                request.flipX(),
+                request.tiltDeg()
         ));
         return ApiResponse.success(toResponse(memory));
     }
 
     private MemoryResponse toResponse(PrivateMemory memory) {
+        // 프론트가 방 장면을 복원할 수 있도록 위치/반전/기울기 값까지 응답합니다.
         return new MemoryResponse(
                 memory.getId(),
                 memory.getMemoryDate().toString(),
@@ -55,6 +75,10 @@ public class MemoryController {
                 memory.getWeatherKey(),
                 memory.getObjectKey(),
                 memory.getSlotKey(),
+                memory.getPositionX(),
+                memory.getPositionY(),
+                memory.getFlipX(),
+                memory.getTiltDeg(),
                 memory.getCreatedAt().toString(),
                 memory.getUpdatedAt().toString()
         );
@@ -67,7 +91,17 @@ public class MemoryController {
             String moodKey,
             String weatherKey,
             String objectKey,
-            String slotKey
+            String slotKey,
+            Integer positionX,
+            Integer positionY
+    ) {
+    }
+
+    public record MemoryPositionRequest(
+            Integer positionX,
+            Integer positionY,
+            Boolean flipX,
+            Integer tiltDeg
     ) {
     }
 
@@ -80,6 +114,10 @@ public class MemoryController {
             String weatherKey,
             String objectKey,
             String slotKey,
+            Integer positionX,
+            Integer positionY,
+            Boolean flipX,
+            Integer tiltDeg,
             String createdAt,
             String updatedAt
     ) {

@@ -1,14 +1,15 @@
 import { FormEvent, useState } from "react";
 import { useAppStore } from "../../stores/AppStore";
 
-// 실제 API 대신 authService mock 로그인으로 연결되는 로그인 폼입니다.
+// 백엔드 로그인 API를 호출하는 로그인 폼입니다.
 export function LoginForm() {
   const { login, navigate } = useAppStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
@@ -24,9 +25,13 @@ export function LoginForm() {
     }
 
     try {
-      login({ email, password });
+      setIsSubmitting(true);
+      // 이번 API 연동 변경: 제출 시 authService가 /api/auth/login을 호출합니다.
+      await login({ email, password });
     } catch {
-      setError("관리자 비밀번호가 맞지 않습니다.");
+      setError("이메일 또는 비밀번호가 맞지 않습니다.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -56,8 +61,8 @@ export function LoginForm() {
 
       {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-      <button type="submit" className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm">
-        로그인
+      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+        {isSubmitting ? "로그인 중" : "로그인"}
       </button>
 
       <p className="text-center text-sm text-white/38">

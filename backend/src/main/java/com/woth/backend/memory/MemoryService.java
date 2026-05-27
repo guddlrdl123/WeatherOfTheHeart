@@ -52,6 +52,7 @@ public class MemoryService {
         int year = memoryDate.getYear();
         int month = memoryDate.getMonthValue();
 
+        // 해당 월의 개인 방이 없으면 메모리 저장 전에 자동으로 생성합니다.
         PrivateRoom privateRoom = privateRoomRepository.findByUserIdAndYearAndMonth(userId, year, month)
                 .orElseGet(() -> privateRoomRepository.save(
                         PrivateRoom.builder()
@@ -64,16 +65,44 @@ public class MemoryService {
 
         PrivateMemory memory = PrivateMemory.builder()
                 .privateRoom(privateRoom)
-                .title(request.title())
+                .title(normalizeTitle(request.title()))
                 .content(request.content())
                 .moodKey(request.moodKey())
                 .weatherKey(request.weatherKey())
                 .objectKey(request.objectKey())
                 .slotKey(request.slotKey())
                 .memoryDate(memoryDate)
+                // 최초 배치 좌표가 함께 넘어온 경우 DB에 같이 저장합니다.
+                .positionX(request.positionX())
+                .positionY(request.positionY())
                 .build();
 
         return privateMemoryRepository.save(memory);
+    }
+
+    @Transactional
+    public PrivateMemory updateMemoryPosition(Long userId, Long memoryId, UpdateMemoryPositionRequest request) {
+        // 다른 사용자의 기억을 수정하지 못하도록 memoryId와 userId를 함께 확인합니다.
+        PrivateMemory memory = privateMemoryRepository.findByIdAndPrivateRoomUserId(memoryId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMORY_NOT_FOUND));
+
+        memory.updatePosition(
+                request.positionX(),
+                request.positionY(),
+                request.flipX(),
+                request.tiltDeg()
+        );
+
+        return memory;
+    }
+
+    private String normalizeTitle(String title) {
+        // 프론트에서 제목을 비워도 DB의 NOT NULL 제약을 만족하도록 기본 제목을 사용합니다.
+        if (title == null || title.isBlank()) {
+            return "제목 없는 기억";
+        }
+
+        return title;
     }
 
     public record CreateMemoryRequest(
@@ -83,7 +112,17 @@ public class MemoryService {
             String moodKey,
             String weatherKey,
             String objectKey,
-            String slotKey
+            String slotKey,
+            Integer positionX,
+            Integer positionY
+    ) {
+    }
+
+    public record UpdateMemoryPositionRequest(
+            Integer positionX,
+            Integer positionY,
+            Boolean flipX,
+            Integer tiltDeg
     ) {
     }
 }

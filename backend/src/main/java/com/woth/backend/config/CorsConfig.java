@@ -2,7 +2,7 @@ package com.woth.backend.config;
 
 /**
  * 브라우저에서 프론트엔드 도메인으로부터 온 API 요청을 허용하기 위한 CORS 설정입니다.
- * 프론트엔드가 `http://localhost:5174`에서 백엔드 `/api/**` 엔드포인트를 호출할 수 있도록 합니다.
+ * 로컬 프론트엔드 개발 서버에서 백엔드 `/api/**` 엔드포인트를 호출할 수 있도록 합니다.
  */
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -14,7 +14,11 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:5174")
+                // 이번 CORS 수정: Vite 개발 서버 포트가 5173/5174 등으로 바뀌어도 API 호출을 허용합니다.
+                .allowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*"
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)

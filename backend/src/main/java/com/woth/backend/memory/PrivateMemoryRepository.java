@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface PrivateMemoryRepository extends JpaRepository<PrivateMemory, Long> {
     List<PrivateMemory> findByPrivateRoomUserId(Long userId);
     boolean existsByPrivateRoomUserIdAndMemoryDate(Long userId, LocalDate memoryDate);
+    // 위치 수정 시 요청 사용자의 기억인지 함께 검증하기 위한 조회입니다.
+    Optional<PrivateMemory> findByIdAndPrivateRoomUserId(Long id, Long userId);
 }

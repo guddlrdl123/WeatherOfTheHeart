@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useAppStore } from "../../stores/AppStore";
 
-// mock 회원가입을 수행하고 성공하면 내 방으로 이동시키는 폼입니다.
+// 백엔드 회원가입 API를 호출하고 성공하면 내 방으로 이동시키는 폼입니다.
 export function SignupForm() {
   const { signup, navigate } = useAppStore();
   const [email, setEmail] = useState("");
@@ -9,8 +9,9 @@ export function SignupForm() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
 
@@ -35,7 +36,15 @@ export function SignupForm() {
       return;
     }
 
-    signup({ email, password, nickname });
+    try {
+      setIsSubmitting(true);
+      // 이번 API 연동 변경: 가입 정보는 /api/auth/signup을 통해 DB에 저장됩니다.
+      await signup({ email, password, nickname });
+    } catch {
+      setError("회원가입에 실패했습니다. 이미 가입된 이메일인지 확인해주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -79,8 +88,8 @@ export function SignupForm() {
 
       {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
 
-      <button type="submit" className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm">
-        회원가입
+      <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+        {isSubmitting ? "가입 중" : "회원가입"}
       </button>
 
       <p className="text-center text-sm text-white/38">
