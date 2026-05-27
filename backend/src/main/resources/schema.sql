@@ -1,6 +1,6 @@
 /* ========================================================
    [Part 1] DDL: 데이터베이스 스키마 정의
-   의존성 순서: users -> monthly_rooms -> memory_entries 순서로 생성
+   의존성 순서: users -> private_rooms -> private_memories 순서로 생성
 ======================================================== */
 
 -- 1. 사용자 정보 테이블: 가입된 회원 및 '나그네(익명)' 정보를 관리합니다.
@@ -13,8 +13,8 @@ CREATE TABLE users (
                        updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. 월별 방 정보 테이블: 유저당 월별로 생성되는 고유한 방 공간을 정의합니다.
-CREATE TABLE monthly_rooms (
+-- 2. 개인 방 정보 테이블: 유저당 월별로 생성되는 고유한 방 공간을 정의합니다.
+CREATE TABLE private_rooms (
                                id BIGINT AUTO_INCREMENT PRIMARY KEY,         -- 방 고유 식별자
                                user_id BIGINT NOT NULL,                      -- 해당 방의 주인 유저
                                year INT NOT NULL,                            -- 방이 생성된 연도 (예: 2026)
@@ -24,38 +24,38 @@ CREATE TABLE monthly_rooms (
                                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-                               CONSTRAINT fk_monthly_rooms_user FOREIGN KEY (user_id) REFERENCES users(id),
+                               CONSTRAINT fk_private_rooms_user FOREIGN KEY (user_id) REFERENCES users(id),
                                CONSTRAINT uk_user_year_month UNIQUE (user_id, year, month) -- 한 유저는 같은 연/월에 하나의 방만 가짐
 );
 
 -- 3. 일기(기억) 테이블: 방의 상태 변화와 가구 배치의 근거가 되는 핵심 데이터입니다.
-CREATE TABLE memory_entries (
+CREATE TABLE private_memories (
                                 id BIGINT AUTO_INCREMENT PRIMARY KEY,         -- 일기 고유 식별자
-                                user_id BIGINT NOT NULL,                      -- 작성자 유저
-                                monthly_room_id BIGINT NOT NULL,              -- 종속된 월별 방
+                                private_room_id BIGINT NOT NULL,              -- 종속된 개인 방
                                 memory_date DATE NOT NULL,                    -- 일기 작성 날짜
+                                title VARCHAR(100) NOT NULL,                  -- 일기 제목
                                 content TEXT NOT NULL,                        -- 일기 본문
-                                room_title VARCHAR(100) NOT NULL,             -- 당시 방의 제목
-                                mood VARCHAR(30) NOT NULL,                    -- 감정 태그 (배경 연동)
-                                weather VARCHAR(30) NOT NULL,                 -- 날씨 태그 (배경 연동)
-                                lighting VARCHAR(30) NOT NULL,                -- 조명 태그 (배경 연동)
-                                palette VARCHAR(30) NOT NULL,                 -- 색상 팔레트 정보
-                                object_key VARCHAR(50) NOT NULL,              -- 배치할 사물 코드 (room_objects 참조)
-                                slot_key VARCHAR(50) NOT NULL,                -- 사물을 놓을 위치 코드 (object_slots 참조)
-                                message VARCHAR(255) NULL,                    -- 사물과 함께 남긴 메시지
+                                mood_key VARCHAR(50) NOT NULL,                -- 감정 태그 (배경 연동)
+                                weather_key VARCHAR(50) NOT NULL,             -- 날씨 태그 (배경 연동)
+                                object_key VARCHAR(100) NOT NULL,             -- 배치할 사물 코드
+                                slot_key VARCHAR(100) NOT NULL,               -- 사물을 놓을 위치 코드
+                                image_url VARCHAR(255) NULL,                  -- 첨부 이미지 경로
+                                position_x INT NULL,                          -- 배치 X 좌표
+                                position_y INT NULL,                          -- 배치 Y 좌표
+                                flip_x BOOLEAN NULL,                          -- 좌우 반전 여부
+                                tilt_deg INT NULL,                            -- 기울기 각도
                                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-                                CONSTRAINT fk_memory_entries_user FOREIGN KEY (user_id) REFERENCES users(id),
-                                CONSTRAINT fk_memory_entries_monthly_room FOREIGN KEY (monthly_room_id) REFERENCES monthly_rooms(id),
-                                CONSTRAINT uk_user_memory_date UNIQUE (user_id, memory_date), -- 유저는 하루에 한 개의 일기만 작성 가능
+                                CONSTRAINT fk_private_memories_private_room FOREIGN KEY (private_room_id) REFERENCES private_rooms(id),
+                                CONSTRAINT uk_room_memory_date UNIQUE (private_room_id, memory_date),
 
     -- 성능 최적화: 유저의 특정 월간 기록을 빠르게 조회하기 위한 인덱스
-                                INDEX idx_memories_user_date (user_id, memory_date DESC)
+                                INDEX idx_memories_room_date (private_room_id, memory_date DESC)
 );
 
 -- 4. 사물 카탈로그 테이블: 사용 가능한 모든 가구의 마스터 데이터를 관리합니다.
-CREATE TABLE room_objects (
+CREATE TABLE object_catalogs (
                               id BIGINT AUTO_INCREMENT PRIMARY KEY,
                               object_key VARCHAR(50) NOT NULL UNIQUE,       -- 사물 고유 식별 코드
                               object_name VARCHAR(50) NOT NULL,             -- 사물 이름
