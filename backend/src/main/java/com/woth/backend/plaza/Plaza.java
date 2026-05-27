@@ -24,8 +24,27 @@ public class Plaza {
     @Column(nullable = false, length = 100)
     private String title; // 광장 이름 또는 주제
 
-    @Column(columnDefinition = "TEXT")
-    private String description; // 광장 소개글
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String topic; // 광장 주제 또는 소개 글
+
+    @Column(name = "max_objects", nullable = false)
+    @Builder.Default
+    private Integer maxObjects = 8; // 광장에 허용되는 최대 오브젝트 수
+
+    @Column(name = "allow_search", nullable = false)
+    @Builder.Default
+    private Boolean allowSearch = true; // 광장 검색 허용 여부
+
+    @Column(name = "allow_invite", nullable = false)
+    @Builder.Default
+    private Boolean allowInvite = true; // 광장 초대 허용 여부
+
+    @Column(name = "allow_duplicate_objects", nullable = false)
+    @Builder.Default
+    private Boolean allowDuplicateObjects = false; // 동일 오브젝트 중복 허용 여부
+
+    @Column(name = "background_key", nullable = false, length = 50)
+    private String backgroundKey; // 광장의 배경 날씨 키
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
