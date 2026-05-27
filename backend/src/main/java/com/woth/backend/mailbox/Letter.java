@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 /**
  * [letters 테이블 매핑 엔티티]
- * 유저들이 서로의 우체통을 통해 주고받은 마음 편지 데이터입니다.
+ * 광장 종료 후 업스케일링된 사진을 받는 편지 정보를 저장하는 엔티티입니다.
  */
 @Entity
 @Table(name = "letters")
@@ -34,7 +34,13 @@ public class Letter {
     private String title; // 편지 제목
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String content; // 편지 본문 내용
+    private String message; // 편지 본문 내용
+
+    @Column(name = "plaza_title", nullable = false, length = 100)
+    private String plazaTitle; // 완료된 광장의 제목
+
+    @Column(name = "completed_at", nullable = false)
+    private LocalDateTime completedAt; // 광장 완료 시각
 
     @Column(name = "is_read", nullable = false)
     @Builder.Default
