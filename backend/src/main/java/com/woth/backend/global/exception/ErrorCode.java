@@ -8,6 +8,13 @@ import lombok.RequiredArgsConstructor;
 public enum ErrorCode {
     // 도메인별 에러 코드를 여기에 추가하며 관리
     USER_NOT_FOUND("USER_001", "존재하지 않는 유저입니다."),
+    USER_ALREADY_EXISTS("USER_002", "이미 등록된 이메일입니다."),
+    MEMORY_DUPLICATE("MEMORY_001", "이미 해당 날짜에 기록이 존재합니다."),
+    PLAZA_NOT_FOUND("PLAZA_001", "존재하지 않는 광장입니다."),
+    PLAZA_ALREADY_JOINED("PLAZA_002", "이미 이 광장에 참여한 상태입니다."),
+    PLAZA_COMPLETE("PLAZA_003", "광장이 이미 완료되었습니다."),
+    PLAZA_DUPLICATE_OBJECT("PLAZA_004", "이미 해당 오브젝트가 광장에 놓여 있습니다."),
+    MAILBOX_NOT_FOUND("MAILBOX_001", "존재하지 않는 우편입니다."),
     ROOM_NOT_FOUND("ROOM_001", "존재하지 않는 방입니다."),
     INVALID_INPUT("GLOBAL_001", "입력값이 올바르지 않습니다.");
 
