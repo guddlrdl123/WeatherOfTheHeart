@@ -16,6 +16,8 @@ export type AppTheme = "dark" | "light";
 export type RoomObjectPosition = {
   positionX: number;
   positionY: number;
+  flipX?: boolean;
+  tiltDeg?: number;
 };
 export type RoomObjectPositionInput = RoomObjectPosition & {
   objectKey: string;
@@ -178,6 +180,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         [input.objectKey]: {
           positionX: input.positionX,
           positionY: input.positionY,
+          flipX: input.flipX,
+          tiltDeg: input.tiltDeg,
         },
       };
       writeStorage(ROOM_OBJECT_POSITIONS_KEY, nextPositions);

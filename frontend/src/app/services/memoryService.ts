@@ -10,6 +10,8 @@ export type UpdateMemoryPositionInput = {
   id: string;
   positionX: number;
   positionY: number;
+  flipX?: boolean;
+  tiltDeg?: number;
 };
 
 // 개인 방 기록을 localStorage에 저장하는 mock service layer입니다.
@@ -52,6 +54,8 @@ export const memoryService = {
       ...target,
       positionX: input.positionX,
       positionY: input.positionY,
+      flipX: input.flipX,
+      tiltDeg: input.tiltDeg,
       updatedAt: new Date().toISOString(),
     };
     this.saveAll(memories.map((memory) => (memory.id === input.id ? updatedMemory : memory)));

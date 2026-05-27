@@ -17,6 +17,7 @@ export function ObjectPicker({
       {objects.map((object) => {
         const selected = value === object.objectKey;
         const pickerImageSize = Math.round(56 * Math.min(object.imageScale ?? 1.15, 2.2));
+        const pickerTransform = `scaleX(${object.flipX ? -1 : 1}) rotate(${object.tiltDeg ?? 0}deg)`;
 
         return (
           <button
@@ -35,10 +36,10 @@ export function ObjectPicker({
                   src={object.imageUrl}
                   alt=""
                   className="object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.28)]"
-                  style={{ width: pickerImageSize, height: pickerImageSize }}
+                  style={{ width: pickerImageSize, height: pickerImageSize, transform: pickerTransform }}
                 />
               ) : (
-                <span className="text-xl" style={{ fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif' }}>
+                <span className="text-xl" style={{ fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif', transform: pickerTransform }}>
                   {object.icon}
                 </span>
               )}

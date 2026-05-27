@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Check, Move, PenLine, X } from "lucide-react";
+import { CalendarDays, Check, FlipHorizontal, Move, PenLine, RotateCcw, X } from "lucide-react";
 import { OBJECT_BY_KEY, ROOM_OBJECTS, ROOM_SLOT_POSITIONS } from "../constants/objects";
 import { WEATHER_BY_KEY } from "../constants/weather";
 import { MemoryPopup } from "../components/room/MemoryPopup";
@@ -14,6 +14,8 @@ import { formatDotDate, getTodayString } from "../utils/date";
 type RoomPlacementPosition = {
   x: number;
   y: number;
+  flipX: boolean;
+  tiltDeg: number;
 };
 
 const FALLBACK_ROOM_POSITION = { x: 50, y: 68 };
@@ -75,6 +77,8 @@ export function RoomPage() {
           slotKey: object.slotKey,
           positionX: savedPosition?.positionX,
           positionY: savedPosition?.positionY,
+          flipX: savedPosition?.flipX,
+          tiltDeg: savedPosition?.tiltDeg,
           ownerId: user.id,
         };
       });
@@ -92,6 +96,8 @@ export function RoomPage() {
         memoryDate: selectedMemory.memoryDate,
         positionX: selectedMemory.positionX ?? savedPosition?.positionX,
         positionY: selectedMemory.positionY ?? savedPosition?.positionY,
+        flipX: selectedMemory.flipX ?? savedPosition?.flipX,
+        tiltDeg: selectedMemory.tiltDeg ?? savedPosition?.tiltDeg,
       },
     ];
   }, [currentWeather, roomObjectPositions, selectedDate, selectedMemory, user]);
@@ -102,18 +108,23 @@ export function RoomPage() {
           ...editingRecord,
           positionX: placementPosition.x,
           positionY: placementPosition.y,
+          flipX: placementPosition.flipX,
+          tiltDeg: placementPosition.tiltDeg,
         }
       : null;
   const visibleSceneRecords = placementRecord ? sceneRecords.filter((record) => record.id !== placementRecord.id) : sceneRecords;
 
   function getRecordDefaultPosition(record: SceneObjectRecord) {
     const savedPosition = roomObjectPositions[record.objectKey];
-    const slotKey = OBJECT_BY_KEY[record.objectKey]?.slotKey ?? record.slotKey;
+    const object = OBJECT_BY_KEY[record.objectKey];
+    const slotKey = object?.slotKey ?? record.slotKey;
     const position = ROOM_SLOT_POSITIONS[slotKey];
 
     return {
       x: record.positionX ?? savedPosition?.positionX ?? position?.x ?? FALLBACK_ROOM_POSITION.x,
       y: record.positionY ?? savedPosition?.positionY ?? position?.y ?? FALLBACK_ROOM_POSITION.y,
+      flipX: record.flipX ?? savedPosition?.flipX ?? position?.flipX ?? object?.flipX ?? false,
+      tiltDeg: record.tiltDeg ?? savedPosition?.tiltDeg ?? position?.tiltDeg ?? object?.tiltDeg ?? 0,
     };
   }
 
@@ -129,7 +140,7 @@ export function RoomPage() {
   }
 
   function handleObjectClick(record: SceneObjectRecord) {
-    if (user?.isAdmin || (selectedMemory && record.id === selectedMemory.id)) {
+    if (user?.isAdmin) {
       startPositionEdit(record);
       return;
     }
@@ -147,6 +158,8 @@ export function RoomPage() {
         objectKey: editingRecord.objectKey,
         positionX: placementPosition.x,
         positionY: placementPosition.y,
+        flipX: placementPosition.flipX,
+        tiltDeg: placementPosition.tiltDeg,
       });
       setEditingRecordId(null);
       setPlacementPosition(null);
@@ -162,6 +175,8 @@ export function RoomPage() {
       id: selectedMemory.id,
       positionX: placementPosition.x,
       positionY: placementPosition.y,
+      flipX: placementPosition.flipX,
+      tiltDeg: placementPosition.tiltDeg,
     });
 
     if (!result.ok) {
@@ -269,14 +284,18 @@ export function RoomPage() {
           weatherKey={currentWeather}
           records={visibleSceneRecords}
           placementRecord={placementRecord}
-          onPlacementMove={(position) => setPlacementPosition({ x: position.x, y: position.y })}
+          onPlacementMove={(position) =>
+            setPlacementPosition((currentPosition) =>
+              currentPosition ? { ...currentPosition, x: position.x, y: position.y } : { x: position.x, y: position.y, flipX: false, tiltDeg: 0 },
+            )
+          }
           label={
             placementPosition
               ? "사물을 드래그한 뒤 완료를 눌러 위치를 저장하세요."
               : user?.isAdmin
                 ? "관리자 계정에서는 사물을 눌러 기본 위치를 바꿀 수 있어요."
                 : selectedMemory
-                  ? "사물을 눌러 위치를 바꿀 수 있어요."
+                  ? "사물을 누르면 남긴 글을 볼 수 있어요."
                   : "아직 이 날의 이야기는 비어 있어요."
           }
           onObjectClick={handleObjectClick}
@@ -286,6 +305,38 @@ export function RoomPage() {
             <p className="text-sm leading-6 text-[#e0d2ba]">
               {user?.isAdmin ? "원하는 위치에 놓은 뒤 완료를 누르면 이 사물의 기본 위치가 저장됩니다." : "원하는 위치에 놓은 뒤 완료를 누르면 이 날짜의 사물 위치가 저장됩니다."}
             </p>
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPlacementPosition((currentPosition) => (currentPosition ? { ...currentPosition, flipX: !currentPosition.flipX } : currentPosition))}
+                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
+              >
+                <FlipHorizontal size={16} />
+                좌우반전
+              </button>
+              <label className="flex min-w-[210px] items-center gap-3 text-sm text-[#e0d2ba]">
+                <span className="whitespace-nowrap">기울기 {placementPosition.tiltDeg}도</span>
+                <input
+                  type="range"
+                  min={-45}
+                  max={45}
+                  step={1}
+                  value={placementPosition.tiltDeg}
+                  onChange={(event) =>
+                    setPlacementPosition((currentPosition) => (currentPosition ? { ...currentPosition, tiltDeg: Number(event.target.value) } : currentPosition))
+                  }
+                  className="w-28 accent-[#d8bd9a]"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setPlacementPosition((currentPosition) => (currentPosition ? { ...currentPosition, tiltDeg: 0 } : currentPosition))}
+                className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
+              >
+                <RotateCcw size={16} />
+                기울기 초기화
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"

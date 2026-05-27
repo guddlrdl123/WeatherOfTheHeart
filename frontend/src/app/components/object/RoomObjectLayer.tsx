@@ -36,6 +36,8 @@ export function RoomObjectLayer({
               left={record.positionX}
               top={record.positionY}
               zIndex={position?.zIndex}
+              flipX={record.flipX ?? position?.flipX}
+              tiltDeg={record.tiltDeg ?? position?.tiltDeg}
               faded={faded}
               onClick={onObjectClick}
             />
@@ -52,7 +54,19 @@ export function RoomObjectLayer({
         const top = position.y + position.offsetY * count;
         const faded = Boolean(showMineOnly && myUserId && record.ownerId !== myUserId);
 
-        return <RoomObjectItem key={record.id} record={record} left={left} top={top} zIndex={position.zIndex} faded={faded} onClick={onObjectClick} />;
+        return (
+          <RoomObjectItem
+            key={record.id}
+            record={record}
+            left={left}
+            top={top}
+            zIndex={position.zIndex}
+            flipX={record.flipX ?? position.flipX}
+            tiltDeg={record.tiltDeg ?? position.tiltDeg}
+            faded={faded}
+            onClick={onObjectClick}
+          />
+        );
       })}
     </>
   );

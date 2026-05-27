@@ -9,6 +9,8 @@ export type RoomObject = {
   icon?: string;
   imageUrl?: string;
   imageScale?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
   description?: string;
   allowPrivate: boolean;
   allowPlaza: boolean;
@@ -21,4 +23,6 @@ export type ObjectSlotPosition = {
   offsetX: number;
   offsetY: number;
   zIndex?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
 };

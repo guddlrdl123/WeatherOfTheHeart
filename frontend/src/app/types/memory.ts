@@ -14,6 +14,8 @@ export type Memory = {
   slotKey: ObjectSlotKey;
   positionX?: number;
   positionY?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
   createdAt: string;
   updatedAt?: string;
 };

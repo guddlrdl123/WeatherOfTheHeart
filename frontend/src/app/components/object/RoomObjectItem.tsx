@@ -13,6 +13,8 @@ export type SceneObjectRecord = {
   slotKey: ObjectSlotKey;
   positionX?: number;
   positionY?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
   ownerId?: string;
 };
 
@@ -21,6 +23,8 @@ export function RoomObjectItem({
   left,
   top,
   zIndex,
+  flipX,
+  tiltDeg,
   faded,
   isDraft,
   onClick,
@@ -33,6 +37,8 @@ export function RoomObjectItem({
   left: number;
   top: number;
   zIndex?: number;
+  flipX?: boolean;
+  tiltDeg?: number;
   faded?: boolean;
   isDraft?: boolean;
   onClick: (record: SceneObjectRecord) => void;
@@ -50,6 +56,9 @@ export function RoomObjectItem({
     height: Math.round(baseImageSize.height * imageScale),
   };
   const hitAreaSize = Math.max(72, Math.max(imageSize.width, imageSize.height));
+  const shouldFlipX = flipX ?? record.flipX ?? object?.flipX ?? false;
+  const objectTiltDeg = tiltDeg ?? record.tiltDeg ?? object?.tiltDeg ?? 0;
+  const objectTransform = `scaleX(${shouldFlipX ? -1 : 1}) rotate(${objectTiltDeg}deg)`;
 
   return (
     <button
@@ -89,7 +98,10 @@ export function RoomObjectItem({
             alt=""
             draggable={false}
             className="object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.36)]"
-            style={imageSize}
+            style={{
+              ...imageSize,
+              transform: objectTransform,
+            }}
           />
         ) : (
           <span
@@ -99,6 +111,7 @@ export function RoomObjectItem({
               fontSize: object?.objectKey === "carpet" ? "2.2rem" : "1.9rem",
               color: "#d8bd9a",
               fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif',
+              transform: objectTransform,
             }}
           >
             {object?.icon ?? "?"}
