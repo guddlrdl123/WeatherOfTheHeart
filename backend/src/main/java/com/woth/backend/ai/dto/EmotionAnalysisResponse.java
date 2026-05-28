@@ -10,7 +10,6 @@ public record EmotionAnalysisResponse(
 		Integer happiness,
 		String weather,
 		String lighting,
-		String sceneDescription,
-		List<String> objects
+		String sceneDescription
 ) {
 }

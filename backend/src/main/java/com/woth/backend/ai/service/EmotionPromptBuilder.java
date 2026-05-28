@@ -20,8 +20,7 @@ public class EmotionPromptBuilder {
                   "happiness": 0,
                   "weather": "",
                   "lighting": "",
-                  "sceneDescription": "",
-                  "objects": []
+                  "sceneDescription": ""
                 }
 
                 규칙:
@@ -34,6 +33,6 @@ public class EmotionPromptBuilder {
 
                 사용자 입력:
                 %s
-                """.formatted(content);
+               \s""".formatted(content);
 	}
 }
