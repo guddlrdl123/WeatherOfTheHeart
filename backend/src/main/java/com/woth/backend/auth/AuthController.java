@@ -37,6 +37,7 @@ public class AuthController {
                 user.getId(),
                 user.getEmail(),
                 user.getNickname(),
+                user.getIsAdmin(),
                 user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         );
     }
@@ -47,6 +48,6 @@ public class AuthController {
     public record SignupRequest(String email, String password, String nickname) {
     }
 
-    public record AuthResponse(Long id, String email, String nickname, String joinedAt) {
+    public record AuthResponse(Long id, String email, String nickname, Boolean isAdmin, String joinedAt) {
     }
 }

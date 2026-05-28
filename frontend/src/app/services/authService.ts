@@ -3,16 +3,6 @@ import { readStorage, writeStorage } from "../lib/storage";
 import { requestApi } from "./api";
 
 const USER_KEY = "maeum-weather:user";
-const ADMIN_EMAIL = "admin@maeum.weather";
-const ADMIN_PASSWORD = "admin1234";
-
-const ADMIN_USER: AppUser = {
-  id: "admin",
-  email: ADMIN_EMAIL,
-  nickname: "Admin",
-  joinedAt: "2026-05-01T00:00:00.000Z",
-  isAdmin: true,
-};
 
 // 같은 이메일을 같은 사용자로 처리하기 위해 입력값을 정규화합니다.
 function normalizeEmail(email: string) {
@@ -23,6 +13,7 @@ type AuthResponse = {
   id: number;
   email: string;
   nickname: string;
+  isAdmin: boolean;
   joinedAt: string;
 };
 
@@ -33,6 +24,8 @@ function toAppUser(response: AuthResponse): AppUser {
     email: response.email,
     nickname: response.nickname,
     joinedAt: response.joinedAt,
+    // 관리자 여부는 이제 프론트 하드코딩이 아니라 백엔드 users.is_admin 값에서 내려옵니다.
+    isAdmin: response.isAdmin,
   };
 }
 
@@ -41,11 +34,7 @@ export const authService = {
   getCurrentUser(): AppUser | null {
     const user = readStorage<AppUser | null>(USER_KEY, null);
 
-    if (user?.email === ADMIN_EMAIL) {
-      return ADMIN_USER;
-    }
-
-    // 예전 mock 로그인 id("me")가 남아 있으면 /api/users/me 요청으로 500이 나므로 자동 정리합니다.
+    // 예전 mock 로그인 id("me", "admin")가 남아 있으면 백엔드 숫자 userId 요청이 깨지므로 자동 정리합니다.
     if (user && !/^\d+$/.test(user.id)) {
       writeStorage<AppUser | null>(USER_KEY, null);
       return null;
@@ -57,16 +46,7 @@ export const authService = {
   async login(input: LoginInput): Promise<AppUser> {
     const email = normalizeEmail(input.email);
 
-    if (email === ADMIN_EMAIL && input.password !== ADMIN_PASSWORD) {
-      throw new Error("invalid_admin_password");
-    }
-
-    if (email === ADMIN_EMAIL) {
-      writeStorage(USER_KEY, ADMIN_USER);
-      return ADMIN_USER;
-    }
-
-    // mock 로그인 대신 DB에 저장된 유저를 백엔드에서 조회합니다.
+    // 일반 사용자와 관리자 모두 백엔드 로그인 API를 통해 DB 권한 값을 받습니다.
     const user = toAppUser(await requestApi<AuthResponse>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({

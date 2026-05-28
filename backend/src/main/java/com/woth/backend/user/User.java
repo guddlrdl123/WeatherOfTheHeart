@@ -29,10 +29,14 @@ public class User {
     @Column(nullable = false, length = 50) // 화면에 노출될 유저의 닉네임
     private String nickname;
 
-    @Column(name = "created_at", nullable = false, updatable = false) // 생성일은 수정 불가능
+    @Column(name = "is_admin", nullable = false)
+    @Builder.Default
+    private Boolean isAdmin = false; // 백엔드 DB 기준 관리자 여부입니다. 프론트 mock 관리자 대신 이 값을 로그인 응답으로 내려줍니다.
+
+    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP") // DB default도 함께 둬 SQL 직접 INSERT 시에도 생성 시간이 채워집니다.
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", nullable = false, columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP") // DB default/on update를 명시해 DBeaver에서도 기본값이 보이게 합니다.
     private LocalDateTime updatedAt;
 
     // 데이터가 처음 저장(Insert)되기 직전에 실행되어 시간을 채워줍니다.
@@ -46,5 +50,12 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void promoteToAdmin(String password) {
+        // 개발용 관리자 계정이 이미 일반 유저로 존재해도 백엔드 권한 기준을 관리자 상태로 맞춥니다.
+        this.password = password;
+        this.nickname = "Admin";
+        this.isAdmin = true;
     }
 }
