@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Check, FlipHorizontal, Move, PenLine, RotateCcw, X } from "lucide-react";
 import { OBJECT_BY_KEY, ROOM_OBJECTS, ROOM_SLOT_POSITIONS } from "../constants/objects";
+import { getFallbackWeatherKeyForMood } from "../constants/moods";
 import { WEATHER_BY_KEY } from "../constants/weather";
 import { MemoryPopup } from "../components/room/MemoryPopup";
 import { MemoryWriteModal, type WriteModalValue } from "../components/room/MemoryWriteModal";
@@ -8,7 +9,9 @@ import { RoomCalendarSidebar } from "../components/calendar/RoomCalendarSidebar"
 import { RoomScene } from "../components/room/RoomScene";
 import { SaveToast } from "../components/common/SaveToast";
 import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
+import { aiService } from "../services/aiService";
 import { useAppStore } from "../stores/AppStore";
+import type { AiWeatherAnalysis } from "../types/weather";
 import { formatDotDate, getTodayString } from "../utils/date";
 
 type RoomPlacementPosition = {
@@ -42,6 +45,8 @@ export function RoomPage() {
   const [placementPosition, setPlacementPosition] = useState<RoomPlacementPosition | null>(null);
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
+  const [isSavingMemory, setIsSavingMemory] = useState(false);
+  const [latestAiAnalysis, setLatestAiAnalysis] = useState<{ memoryId: string; analysis: AiWeatherAnalysis } | null>(null);
   const today = getTodayString();
   const weather = WEATHER_BY_KEY[currentWeather];
   const viewMonthKey = `${viewYear}-${String(viewMonth).padStart(2, "0")}`;
@@ -220,20 +225,61 @@ export function RoomPage() {
   }
 
   async function handleSave(value: WriteModalValue) {
-    const result = await addMemory(value);
-
-    if (!result.ok) {
-      // 같은 날짜에 이미 기록이 있으면 새 기록을 만들지 않습니다.
-      setToast("이미 이 날의 이야기가 방에 남아 있어요.");
+    if (isSavingMemory) {
       return;
     }
 
-    setSelectedDate(result.memory.memoryDate);
-    const next = new Date(`${result.memory.memoryDate}T00:00:00`);
-    setViewYear(next.getFullYear());
-    setViewMonth(next.getMonth() + 1);
-    setIsWriteOpen(false);
-    setToast("오늘의 이야기가 방에 남았어요.");
+    if (!user || user.isAdmin) {
+      setToast("일반 계정으로 로그인한 뒤 기록을 남길 수 있어요.");
+      return;
+    }
+
+    setIsSavingMemory(true);
+
+    try {
+      let analysis: AiWeatherAnalysis | null = null;
+
+      try {
+        analysis = await aiService.analyzeWeather({
+          userId: user.id,
+          content: value.content,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+
+        if (message.includes("USER_001") || message === "invalid_user_id") {
+          setToast("로그인 정보가 맞지 않아요. 다시 로그인해 주세요.");
+          return;
+        }
+      }
+
+      const weatherKey = analysis?.weatherKey ?? getFallbackWeatherKeyForMood(value.moodKey);
+      const result = await addMemory({
+        ...value,
+        weatherKey,
+      });
+
+      if (!result.ok) {
+        setToast(result.reason === "duplicate_object" ? "이번 달 방에 이미 놓인 사물이에요." : "이미 이 날짜의 이야기가 방에 남아 있어요.");
+        return;
+      }
+
+      setSelectedDate(result.memory.memoryDate);
+      const next = new Date(`${result.memory.memoryDate}T00:00:00`);
+      setViewYear(next.getFullYear());
+      setViewMonth(next.getMonth() + 1);
+      setIsWriteOpen(false);
+      setLatestAiAnalysis(analysis ? { memoryId: result.memory.id, analysis } : null);
+      setToast(
+        analysis
+          ? `AI가 ${analysis.weatherLabel} 날씨로 읽었어요. 확신도 ${Math.round(analysis.confidence * 100)}%.`
+          : "AI 분석이 어려워 선택한 기분 기준으로 저장했어요.",
+      );
+    } catch {
+      setToast("저장 중 문제가 생겼어요. 잠시 뒤 다시 시도해 주세요.");
+    } finally {
+      setIsSavingMemory(false);
+    }
   }
 
   return (
@@ -263,6 +309,14 @@ export function RoomPage() {
               <p className="mt-4 text-[0.72rem] text-white/34">
                 {weather.icon} {weather.quietText}
               </p>
+              {latestAiAnalysis?.memoryId === selectedMemory.id && (
+                <div className="mt-4 rounded-md border border-[#d8bd9a]/16 bg-[#d8bd9a]/8 p-3 text-sm leading-6 text-white/52">
+                  <p className="text-[#e0d2ba]">
+                    AI 날씨: {latestAiAnalysis.analysis.weatherLabel} · 확신도 {Math.round(latestAiAnalysis.analysis.confidence * 100)}%
+                  </p>
+                  <p className="mt-1">{latestAiAnalysis.analysis.reason}</p>
+                </div>
+              )}
             </div>
           ) : (
             <div>
@@ -388,6 +442,7 @@ export function RoomPage() {
           initialDate={selectedDate}
           existingMemory={selectedMemory}
           privateMemories={memories}
+          isSaving={isSavingMemory}
           onClose={() => setIsWriteOpen(false)}
           onSave={handleSave}
         />
