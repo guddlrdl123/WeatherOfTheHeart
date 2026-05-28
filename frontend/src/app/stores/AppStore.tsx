@@ -39,6 +39,7 @@ type AppStore = {
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   memories: Memory[];
+  isMemoriesLoading: boolean;
   selectedMemory: Memory | null;
   currentWeather: WeatherKey;
   addMemory: (input: CreateMemoryInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" | "duplicate_object" }>;
@@ -81,6 +82,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(() => authService.getCurrentUser());
   const [selectedDate, setSelectedDate] = useState(getTodayString);
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [isMemoriesLoading, setIsMemoriesLoading] = useState(false);
   const [roomObjectPositions, setRoomObjectPositions] = useState<Record<string, RoomObjectPosition>>(() => getInitialRoomObjectPositions());
   const [plazas, setPlazas] = useState<Plaza[]>(() => plazaService.listPlazas());
   const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
@@ -107,10 +109,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user || user.isAdmin) {
       setMemories([]);
+      setIsMemoriesLoading(false);
       return;
     }
 
     let ignore = false;
+    setIsMemoriesLoading(true);
 
     // 이번 DB 저장 변경: 로그인된 사용자 id로 서버의 private_memories 목록을 불러옵니다.
     memoryService
@@ -123,6 +127,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         if (!ignore) {
           setMemories([]);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setIsMemoriesLoading(false);
         }
       });
 
@@ -261,6 +270,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       selectedDate,
       setSelectedDate,
       memories,
+      isMemoriesLoading,
       selectedMemory,
       currentWeather,
       addMemory,
@@ -286,6 +296,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       logout,
       selectedDate,
       memories,
+      isMemoriesLoading,
       selectedMemory,
       currentWeather,
       addMemory,

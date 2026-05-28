@@ -7,9 +7,11 @@ import type { Plaza, PlazaStatus } from "../../types/plaza";
 export function PlazaCard({
   plaza,
   entryCount,
+  hasMyEntry = false,
 }: {
   plaza: Plaza;
   entryCount: number;
+  hasMyEntry?: boolean;
 }) {
   const { navigate } = useAppStore();
   const weather = WEATHER_BY_KEY[plaza.backgroundKey];
@@ -23,15 +25,18 @@ export function PlazaCard({
           <span className="rounded-full border border-white/10 px-3 py-1 text-[0.68rem] text-white/42">
             {weather.icon} {weather.label}
           </span>
-          <span
-            className="rounded-full border px-3 py-1 text-[0.68rem]"
-            style={{
-              borderColor: status === "open" ? "rgba(145, 188, 160, 0.35)" : "rgba(255,255,255,0.12)",
-              color: status === "open" ? "#b9d5bd" : "rgba(224,216,200,0.46)",
-            }}
-          >
-            {status === "open" ? "참여 가능" : "완료"}
-          </span>
+          <div className="flex flex-wrap justify-end gap-2">
+            {hasMyEntry && <span className="rounded-full border border-[#d8bd9a]/30 px-3 py-1 text-[0.68rem] text-[#d8bd9a]">참여함</span>}
+            <span
+              className="rounded-full border px-3 py-1 text-[0.68rem]"
+              style={{
+                borderColor: status === "open" ? "rgba(145, 188, 160, 0.35)" : "rgba(255,255,255,0.12)",
+                color: status === "open" ? "#b9d5bd" : "rgba(224,216,200,0.46)",
+              }}
+            >
+              {status === "open" ? "참여 가능" : "완료"}
+            </span>
+          </div>
         </div>
         <h2 className="text-xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
           {plaza.title}
@@ -57,7 +62,7 @@ export function PlazaCard({
             onClick={() => navigate(`/plazas/${plaza.id}`)}
             className="mw-button inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
           >
-            입장하기
+            {hasMyEntry ? "다시 보기" : "입장하기"}
             <ArrowRight size={15} />
           </button>
         </div>

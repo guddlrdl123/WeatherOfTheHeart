@@ -4,7 +4,7 @@ import { useAppStore } from "../stores/AppStore";
 
 // 생성된 광장 목록과 각 광장의 참여 현황을 보여주는 화면입니다.
 export function PlazaListPage() {
-  const { plazas, plazaEntries, navigate } = useAppStore();
+  const { plazas, plazaEntries, navigate, user } = useAppStore();
 
   return (
     <main className="mx-auto max-w-[1280px] px-5 py-8">
@@ -21,14 +21,19 @@ export function PlazaListPage() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {plazas.map((plaza) => (
-          <PlazaCard
-            key={plaza.id}
-            plaza={plaza}
-            // 광장별 참여 수는 entry 목록에서 plazaId로 계산합니다.
-            entryCount={plazaEntries.filter((entry) => entry.plazaId === plaza.id).length}
-          />
-        ))}
+        {plazas.map((plaza) => {
+          const entries = plazaEntries.filter((entry) => entry.plazaId === plaza.id);
+
+          return (
+            <PlazaCard
+              key={plaza.id}
+              plaza={plaza}
+              // 광장별 참여 수는 entry 목록에서 plazaId로 계산합니다.
+              entryCount={entries.length}
+              hasMyEntry={Boolean(user && entries.some((entry) => entry.ownerId === user.id))}
+            />
+          );
+        })}
       </div>
     </main>
   );

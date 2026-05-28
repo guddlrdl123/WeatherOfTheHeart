@@ -141,14 +141,16 @@ export function RoomScene({
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.025),transparent_36%)]" />
 
-      <div className={mode === "plaza" ? "absolute left-[8%] top-[10%] h-[42%] w-[34%]" : "absolute left-[8%] top-[10%] h-[46%] w-[28%]"}>
-        <div className="relative h-full w-full overflow-hidden rounded-md border-[9px] border-[rgba(76,61,48,0.78)]">
-          <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${scene.windowTop}, ${scene.windowBottom})` }} />
-          <WeatherEffect weatherKey={safeWeatherKey} />
-          <span className="absolute inset-y-0 left-1/2 w-[7px] -translate-x-1/2 bg-[rgba(76,61,48,0.72)]" />
-          <span className="absolute inset-x-0 top-[47%] h-[7px] -translate-y-1/2 bg-[rgba(76,61,48,0.72)]" />
+      {mode === "room" && (
+        <div className="absolute left-[8%] top-[10%] h-[46%] w-[28%]">
+          <div className="relative h-full w-full overflow-hidden rounded-md border-[9px] border-[rgba(76,61,48,0.78)]">
+            <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${scene.windowTop}, ${scene.windowBottom})` }} />
+            <WeatherEffect weatherKey={safeWeatherKey} />
+            <span className="absolute inset-y-0 left-1/2 w-[7px] -translate-x-1/2 bg-[rgba(76,61,48,0.72)]" />
+            <span className="absolute inset-x-0 top-[47%] h-[7px] -translate-y-1/2 bg-[rgba(76,61,48,0.72)]" />
+          </div>
         </div>
-      </div>
+      )}
 
       {mode === "room" ? (
         <>

@@ -1,4 +1,4 @@
-import { LogOut, Mail, Moon, Plus, Sun, UserRound } from "lucide-react";
+import { LogOut, Moon, Plus, Sun } from "lucide-react";
 import { useAppStore } from "../../stores/AppStore";
 import type { AppRoute } from "../../types/route";
 
@@ -69,22 +69,6 @@ export function AppHeader() {
                 aria-label="새 광장 만들기"
               >
                 <Plus size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/mailbox")}
-                className="mw-icon-button grid h-9 w-9 place-items-center rounded-md border"
-                aria-label="우편함"
-              >
-                <Mail size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/profile")}
-                className="mw-icon-button grid h-9 w-9 place-items-center rounded-md border"
-                aria-label="마이페이지"
-              >
-                <UserRound size={16} />
               </button>
               <button
                 type="button"

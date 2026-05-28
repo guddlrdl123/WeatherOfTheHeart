@@ -36,8 +36,8 @@ export function MemoryPopup({
               </span>
             )}
             <div>
-              <p className="text-[0.68rem] text-white/30">{record.memoryDate ? formatDotDate(record.memoryDate) : weather.label}</p>
-              <h2 className="text-lg font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
+              <p className="text-[0.68rem] text-[var(--mw-muted-soft)]">{record.memoryDate ? formatDotDate(record.memoryDate) : weather.label}</p>
+              <h2 className="text-lg font-normal text-[var(--mw-heading)]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
                 {record.title?.trim() || "제목 없는 기억"}
               </h2>
             </div>
@@ -46,8 +46,8 @@ export function MemoryPopup({
             <X size={17} />
           </button>
         </div>
-        <p className="text-sm leading-8 text-[#d6c8ae]/74">{record.content}</p>
-        <p className="mt-5 text-[0.72rem] leading-6 text-white/34">
+        <p className="text-sm leading-8 text-[var(--mw-muted)]">{record.content}</p>
+        <p className="mt-5 text-[0.72rem] leading-6 text-[var(--mw-muted-soft)]">
           {weather.quietText} 오늘의 이야기가 방에 남아 있어요.
         </p>
       </section>

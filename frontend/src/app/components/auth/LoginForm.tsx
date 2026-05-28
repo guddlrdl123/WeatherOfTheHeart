@@ -28,8 +28,9 @@ export function LoginForm() {
       setIsSubmitting(true);
       // 이번 API 연동 변경: 제출 시 authService가 /api/auth/login을 호출합니다.
       await login({ email, password });
-    } catch {
-      setError("이메일 또는 비밀번호가 맞지 않습니다.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setError(message.includes("Failed to fetch") ? "서버와 연결할 수 없어요. 백엔드 실행 상태를 확인해 주세요." : "이메일 또는 비밀번호가 맞지 않습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +47,14 @@ export function LoginForm() {
 
       <label className="flex flex-col gap-2 text-sm text-white/54">
         이메일
-        <input className="mw-input h-11 px-3 text-sm" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <input
+          className="mw-input h-11 px-3 text-sm"
+          type="email"
+          value={email}
+          autoComplete="email"
+          disabled={isSubmitting}
+          onChange={(event) => setEmail(event.target.value)}
+        />
       </label>
 
       <label className="flex flex-col gap-2 text-sm text-white/54">
@@ -55,11 +63,17 @@ export function LoginForm() {
           className="mw-input h-11 px-3 text-sm"
           type="password"
           value={password}
+          autoComplete="current-password"
+          disabled={isSubmitting}
           onChange={(event) => setPassword(event.target.value)}
         />
       </label>
 
-      {error && <p className="text-sm text-[#e6a1a1]">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-md border border-[#e6a1a1]/30 bg-[#e6a1a1]/10 px-3 py-2 text-sm leading-6 text-[#e6a1a1]">
+          {error}
+        </p>
+      )}
 
       <button type="submit" disabled={isSubmitting} className="mw-button-solid mt-2 rounded-md px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50">
         {isSubmitting ? "로그인 중" : "로그인"}

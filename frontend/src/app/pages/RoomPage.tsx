@@ -7,6 +7,7 @@ import { MemoryPopup } from "../components/room/MemoryPopup";
 import { MemoryWriteModal, type WriteModalValue } from "../components/room/MemoryWriteModal";
 import { RoomCalendarSidebar } from "../components/calendar/RoomCalendarSidebar";
 import { RoomScene } from "../components/room/RoomScene";
+import { RoomPageSkeleton } from "../components/common/PageSkeletons";
 import { SaveToast } from "../components/common/SaveToast";
 import type { SceneObjectRecord } from "../components/object/RoomObjectItem";
 import { aiService } from "../services/aiService";
@@ -29,6 +30,7 @@ export function RoomPage() {
     selectedDate,
     setSelectedDate,
     memories,
+    isMemoriesLoading,
     addMemory,
     updateMemoryPosition,
     roomObjectPositions,
@@ -51,12 +53,12 @@ export function RoomPage() {
   const weather = WEATHER_BY_KEY[currentWeather];
   const viewMonthKey = `${viewYear}-${String(viewMonth).padStart(2, "0")}`;
   const selectedMonthKey = selectedDate.slice(0, 7);
-  const accumulatedMemories = useMemo(
+  const monthMemories = useMemo(
     () =>
       memories
-        .filter((memory) => memory.memoryDate.startsWith(`${selectedMonthKey}-`) && memory.memoryDate <= selectedDate)
+        .filter((memory) => memory.memoryDate.startsWith(`${selectedMonthKey}-`))
         .sort((a, b) => a.memoryDate.localeCompare(b.memoryDate)),
-    [memories, selectedDate, selectedMonthKey],
+    [memories, selectedMonthKey],
   );
 
   // 저장 완료/중복 안내 토스트는 잠깐 보여준 뒤 사라지게 합니다.
@@ -98,7 +100,7 @@ export function RoomPage() {
       });
     }
 
-    return accumulatedMemories.map((memory) => {
+    return monthMemories.map((memory) => {
       const savedPosition = roomObjectPositions[memory.objectKey];
 
       return {
@@ -109,7 +111,7 @@ export function RoomPage() {
         tiltDeg: memory.tiltDeg ?? savedPosition?.tiltDeg,
       };
     });
-  }, [accumulatedMemories, currentWeather, roomObjectPositions, selectedDate, selectedMemory, user]);
+  }, [currentWeather, monthMemories, roomObjectPositions, selectedDate, selectedMemory, user]);
   const selectedSceneRecord = selectedMemory ? sceneRecords.find((record) => record.id === selectedMemory.id) ?? null : null;
   const editingRecord = editingRecordId ? sceneRecords.find((record) => record.id === editingRecordId) ?? null : null;
   const placementRecord: SceneObjectRecord | null =
@@ -280,6 +282,10 @@ export function RoomPage() {
     } finally {
       setIsSavingMemory(false);
     }
+  }
+
+  if (isMemoriesLoading) {
+    return <RoomPageSkeleton />;
   }
 
   return (

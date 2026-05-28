@@ -40,6 +40,8 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const entries = useMemo(() => plazaEntries.filter((entry) => entry.plazaId === plazaId), [plazaEntries, plazaId]);
   const myEntry = user ? entries.find((entry) => entry.ownerId === user.id) : undefined;
   const records: SceneObjectRecord[] = entries.map((entry) => ({ ...entry, weatherKey: entry.weatherKey }));
+  const visibleRecords = showMineOnly && user ? records.filter((record) => record.ownerId === user.id) : records;
+  const myRecord = myEntry ? records.find((record) => record.id === myEntry.id) ?? null : null;
   const placementRecord: SceneObjectRecord | null =
     pendingEntry && user
       ? {
@@ -172,10 +174,24 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
         </div>
       </div>
 
+      {myRecord && (
+        <section className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8bd9a]/20 bg-[#d8bd9a]/10 px-4 py-3">
+          <p className="text-sm leading-6 text-[var(--mw-muted)]">이미 참여한 광장이에요. 내가 남긴 사물을 따로 보거나 눌러 내용을 다시 확인할 수 있어요.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setShowMineOnly(true)} className="mw-button rounded-md px-4 py-2 text-sm">
+              내 오브젝트 보기
+            </button>
+            <button type="button" onClick={() => setPopupRecord(myRecord)} className="mw-button-solid rounded-md px-4 py-2 text-sm">
+              내 글 열기
+            </button>
+          </div>
+        </section>
+      )}
+
       <RoomScene
         mode="plaza"
         weatherKey={plaza.backgroundKey}
-        records={records}
+        records={visibleRecords}
         myUserId={user?.id}
         showMineOnly={showMineOnly}
         onObjectClick={setPopupRecord}
@@ -211,14 +227,16 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
       )}
 
       <div className="mt-5 flex flex-wrap justify-end gap-3">
-        <button
-          type="button"
-          onClick={() => setShowMineOnly((value) => !value)}
-          className="mw-button inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm"
-        >
-          <Eye size={16} />
-          {showMineOnly ? "전체 보기" : "내가 남긴 오브젝트만 잠시 바라볼게요."}
-        </button>
+        {myEntry && (
+          <button
+            type="button"
+            onClick={() => setShowMineOnly((value) => !value)}
+            className="mw-button inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm"
+          >
+            <Eye size={16} />
+            {showMineOnly ? "전체 오브젝트 보기" : "내가 남긴 오브젝트 보기"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setIsWriteOpen(true)}
