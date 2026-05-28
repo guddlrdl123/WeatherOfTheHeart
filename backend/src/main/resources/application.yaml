@@ -1,6 +1,12 @@
 spring:
   application:
     name: backend
+  config:
+    import:
+      # 실행 위치가 프로젝트 루트, backend 폴더, 또는 그 상위 폴더여도 로컬 .env를 읽습니다.
+      - optional:file:.env[.properties]
+      - optional:file:backend/.env[.properties]
+      - optional:file:WeatherOfTheHeart/backend/.env[.properties]
 
   # 이번 DB 연결 변경: 로컬 MySQL의 woth 스키마를 실제 저장소로 사용합니다.
   datasource:
@@ -27,4 +33,4 @@ spring:
 
 # OpenAI 설정
 openai:
-  api-key: ${OPENAI_API_KEY}
+  api-key: ${OPENAI_API_KEY:}
