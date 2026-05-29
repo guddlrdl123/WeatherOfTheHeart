@@ -2,6 +2,7 @@ import type { PointerEventHandler } from "react";
 import { OBJECT_BY_KEY } from "../../constants/objects";
 import type { ObjectSlotKey } from "../../types/object";
 import type { WeatherKey } from "../../types/weather";
+import { ObjectImage } from "./ObjectImage";
 
 export type SceneObjectRecord = {
   id: string;
@@ -92,31 +93,14 @@ export function RoomObjectItem({
           minHeight: hitAreaSize,
         }}
       >
-        {object?.imageUrl ? (
-          <img
-            src={object.imageUrl}
-            alt=""
-            draggable={false}
-            className="object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.36)]"
-            style={{
-              ...imageSize,
-              transform: objectTransform,
-            }}
-          />
-        ) : (
-          <span
-            className="block text-center"
-            style={{
-              minWidth: 34,
-              fontSize: object?.objectKey === "carpet" ? "2.2rem" : "1.9rem",
-              color: "#d8bd9a",
-              fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif',
-              transform: objectTransform,
-            }}
-          >
-            {object?.icon ?? "?"}
-          </span>
-        )}
+        <ObjectImage
+          object={object}
+          width={imageSize.width}
+          height={imageSize.height}
+          transform={objectTransform}
+          className="object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.36)]"
+          fallbackClassName="block text-center"
+        />
       </span>
       <span className="pointer-events-none absolute left-1/2 top-full mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/10 bg-[#101421] px-2 py-1 text-[0.68rem] text-[#e0d8c8] group-hover:block">
         {title}

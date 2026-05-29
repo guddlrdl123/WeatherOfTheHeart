@@ -1,5 +1,6 @@
 import { OBJECT_BY_KEY, ROOM_OBJECTS } from "../../constants/objects";
 import type { RoomObject } from "../../types/object";
+import { ObjectImage } from "./ObjectImage";
 
 export function ObjectPicker({
   value,
@@ -37,18 +38,14 @@ export function ObjectPicker({
             }}
           >
             <span className="mb-2 flex h-16 items-center justify-center rounded-md bg-black/10">
-              {object.imageUrl ? (
-                <img
-                  src={object.imageUrl}
-                  alt=""
-                  className="object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.28)]"
-                  style={{ width: pickerImageSize, height: pickerImageSize, transform: pickerTransform }}
-                />
-              ) : (
-                <span className="text-xl" style={{ fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif', transform: pickerTransform }}>
-                  {object.icon}
-                </span>
-              )}
+              <ObjectImage
+                object={object}
+                width={pickerImageSize}
+                height={pickerImageSize}
+                transform={pickerTransform}
+                className="object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.28)]"
+                fallbackClassName="text-xl"
+              />
             </span>
             <span className="block text-[0.74rem] text-[#e0d8c8]">{object.name}</span>
             <span className="mt-1 block text-[0.64rem] leading-4 text-white/35">{object.description}</span>

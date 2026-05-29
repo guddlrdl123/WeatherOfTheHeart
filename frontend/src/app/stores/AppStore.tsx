@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { authService } from "../services/authService";
 import { mailboxService } from "../services/mailboxService";
 import { type CreateMemoryInput, type UpdateMemoryPositionInput, memoryService } from "../services/memoryService";
+import { objectService } from "../services/objectService";
 import { type CreatePlazaEntryInput, type CreatePlazaInput, plazaService } from "../services/plazaService";
 import type { AppUser, LoginInput, SignupInput } from "../types/auth";
 import type { MailboxItem } from "../types/mailbox";
@@ -40,6 +41,7 @@ type AppStore = {
   setSelectedDate: (date: string) => void;
   memories: Memory[];
   isMemoriesLoading: boolean;
+  objectCatalogVersion: number;
   selectedMemory: Memory | null;
   currentWeather: WeatherKey;
   addMemory: (input: CreateMemoryInput) => Promise<{ ok: true; memory: Memory } | { ok: false; reason: "duplicate" | "duplicate_object" }>;
@@ -83,6 +85,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [selectedDate, setSelectedDate] = useState(getTodayString);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isMemoriesLoading, setIsMemoriesLoading] = useState(false);
+  const [objectCatalogVersion, setObjectCatalogVersion] = useState(0);
   const [roomObjectPositions, setRoomObjectPositions] = useState<Record<string, RoomObjectPosition>>(() => getInitialRoomObjectPositions());
   const [plazas, setPlazas] = useState<Plaza[]>(() => plazaService.listPlazas());
   const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
@@ -139,6 +142,28 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       ignore = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    // DB object_catalogs를 프론트 오브젝트 카탈로그의 우선 소스로 사용합니다. 실패하면 기존 파일 상수를 fallback으로 둡니다.
+    objectService
+      .loadCatalog()
+      .then(() => {
+        if (!ignore) {
+          setObjectCatalogVersion((version) => version + 1);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setObjectCatalogVersion((version) => version + 1);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const setTheme = useCallback((nextTheme: AppTheme) => {
     setThemeState(nextTheme);
@@ -271,6 +296,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       setSelectedDate,
       memories,
       isMemoriesLoading,
+      objectCatalogVersion,
       selectedMemory,
       currentWeather,
       addMemory,
@@ -297,6 +323,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       selectedDate,
       memories,
       isMemoriesLoading,
+      objectCatalogVersion,
       selectedMemory,
       currentWeather,
       addMemory,

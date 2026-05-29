@@ -33,11 +33,33 @@ public class ObjectCatalog {
     private String slotKey;  // 사물이 들어갈 수 있는 고유 배치 슬롯 구역
 
     @Column(name = "image_url", length = 255)
-    private String imageUrl; // S3 저장소 자산 에셋 경로 주소
+    private String imageUrl; // DB에서 내려주는 오브젝트 이미지 경로입니다. 실제 파일은 프론트 public/objects에서 제공합니다.
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "image_scale")
+    private Double imageScale; // 프론트가 DB 카탈로그를 받아 오브젝트 크기를 복원할 때 사용하는 배율
+
+    @Column(name = "flip_x", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Builder.Default
+    private Boolean flipX = false; // 기본 좌우 반전 여부
+
+    @Column(name = "tilt_deg", nullable = false, columnDefinition = "INT DEFAULT 0")
+    @Builder.Default
+    private Integer tiltDeg = 0; // 기본 기울기 각도
+
+    @Column(columnDefinition = "TEXT")
+    private String description; // 오브젝트 설명 문구
+
+    @Column(name = "is_active", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     @Builder.Default
     private Boolean isActive = true; // 현재 가구의 인게임 활성화/출시 여부
+
+    @Column(name = "allow_private", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @Builder.Default
+    private Boolean allowPrivate = true; // 개인 방에서 선택 가능한 오브젝트인지 DB에서 관리합니다.
+
+    @Column(name = "allow_plaza", nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @Builder.Default
+    private Boolean allowPlaza = true; // 광장에서 선택 가능한 오브젝트인지 DB에서 관리합니다.
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt; // DB의 created_at 컬럼 매핑 (최초 등록 후 수정 불가) [cite: 227]
@@ -56,5 +78,37 @@ public class ObjectCatalog {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void syncCatalogData(
+            String objectName,
+            String mood,
+            String slotKey,
+            String imageUrl,
+            Double imageScale,
+            Boolean flipX,
+            Integer tiltDeg,
+            String description,
+            Boolean allowPrivate,
+            Boolean allowPlaza,
+            Boolean isActive
+    ) {
+        // 서버 시작 시 기본 카탈로그 seed와 기존 DB 데이터를 맞춰 프론트가 DB 기준 오브젝트 목록을 받게 합니다.
+        this.objectName = objectName;
+        this.mood = mood;
+        this.slotKey = slotKey;
+        this.imageUrl = imageUrl;
+        this.imageScale = imageScale;
+        this.flipX = flipX;
+        this.tiltDeg = tiltDeg;
+        this.description = description;
+        this.allowPrivate = allowPrivate;
+        this.allowPlaza = allowPlaza;
+        this.isActive = isActive;
+    }
+
+    public void deactivate() {
+        // 실제 이미지 파일과 매칭되지 않는 예전 카탈로그 row가 API에 내려가 이미지가 깨지는 것을 막습니다.
+        this.isActive = false;
     }
 }

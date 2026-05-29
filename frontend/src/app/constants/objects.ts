@@ -323,13 +323,29 @@ export const OBJECT_BY_KEY = ROOM_OBJECTS.reduce<Record<string, RoomObject>>((ac
   return acc;
 }, {});
 
-Object.entries(LEGACY_OBJECT_KEY_MAP).forEach(([legacyKey, objectKey]) => {
-  const object = OBJECT_BY_KEY[objectKey];
+function applyLegacyObjectKeys() {
+  Object.entries(LEGACY_OBJECT_KEY_MAP).forEach(([legacyKey, objectKey]) => {
+    const object = OBJECT_BY_KEY[objectKey];
 
-  if (object && !OBJECT_BY_KEY[legacyKey]) {
-    OBJECT_BY_KEY[legacyKey] = object;
-  }
-});
+    if (object && !OBJECT_BY_KEY[legacyKey]) {
+      OBJECT_BY_KEY[legacyKey] = object;
+    }
+  });
+}
+
+applyLegacyObjectKeys();
+
+export function replaceRoomObjectsFromCatalog(objects: RoomObject[]) {
+  // DB object_catalogs API 응답을 기존 상수 배열/맵에 반영해 화면이 DB 기준 이미지 경로를 사용하게 합니다.
+  ROOM_OBJECTS.splice(0, ROOM_OBJECTS.length, ...withDefaultImageScale(objects));
+  Object.keys(OBJECT_BY_KEY).forEach((key) => {
+    delete OBJECT_BY_KEY[key];
+  });
+  ROOM_OBJECTS.forEach((object) => {
+    OBJECT_BY_KEY[object.objectKey] = object;
+  });
+  applyLegacyObjectKeys();
+}
 
 export const ROOM_SLOT_POSITIONS: Record<string, ObjectSlotPosition> = {
   carpet: { x: 43, y: 84, offsetX: 8, offsetY: 0, zIndex: 2 },

@@ -3,6 +3,7 @@ import { OBJECT_BY_KEY } from "../../constants/objects";
 import { WEATHER_BY_KEY } from "../../constants/weather";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import { formatDotDate } from "../../utils/date";
+import { ObjectImage } from "../object/ObjectImage";
 import type { SceneObjectRecord } from "../object/RoomObjectItem";
 
 export function MemoryPopup({
@@ -23,18 +24,13 @@ export function MemoryPopup({
       <section className="mw-fade-in mw-surface w-full max-w-[430px] rounded-xl p-6">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            {object?.imageUrl ? (
-              <img
-                src={object.imageUrl}
-                alt=""
-                className="object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.3)]"
-                style={{ width: popupImageSize, height: popupImageSize }}
-              />
-            ) : (
-              <span className="text-3xl" style={{ fontFamily: '"Apple Color Emoji","Noto Color Emoji",system-ui,sans-serif' }}>
-                {object?.icon ?? "?"}
-              </span>
-            )}
+            <ObjectImage
+              object={object}
+              width={popupImageSize}
+              height={popupImageSize}
+              className="object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.3)]"
+              fallbackClassName="text-3xl"
+            />
             <div>
               <p className="text-[0.68rem] text-[var(--mw-muted-soft)]">{record.memoryDate ? formatDotDate(record.memoryDate) : weather.label}</p>
               <h2 className="text-lg font-normal text-[var(--mw-heading)]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
