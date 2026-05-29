@@ -26,6 +26,13 @@ export function MailboxCard({
       <h2 className="text-lg font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
         {item.title}
       </h2>
+      {item.generatedImageData && (
+        <img
+          src={item.generatedImageData}
+          alt={`${item.plazaTitle} 완성 이미지`}
+          className="mt-4 aspect-video w-full rounded-md border border-white/10 object-cover"
+        />
+      )}
       <p className="mt-3 text-sm leading-7 text-white/50">{item.message}</p>
       <p className="mt-4 text-[0.72rem] text-white/30">{formatDotDate(item.completedAt)}</p>
     </button>

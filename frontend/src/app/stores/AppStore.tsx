@@ -3,7 +3,7 @@ import { authService } from "../services/authService";
 import { mailboxService } from "../services/mailboxService";
 import { type CreateMemoryInput, type UpdateMemoryPositionInput, memoryService } from "../services/memoryService";
 import { objectService } from "../services/objectService";
-import { type CreatePlazaEntryInput, type CreatePlazaInput, plazaService } from "../services/plazaService";
+import { type CreatePlazaEntryInput, type CreatePlazaEntryResult, type CreatePlazaInput, plazaService } from "../services/plazaService";
 import type { AppUser, LoginInput, SignupInput } from "../types/auth";
 import type { MailboxItem } from "../types/mailbox";
 import type { Memory } from "../types/memory";
@@ -50,10 +50,10 @@ type AppStore = {
   updateRoomObjectPosition: (input: RoomObjectPositionInput) => void;
   plazas: Plaza[];
   plazaEntries: PlazaEntry[];
-  createPlaza: (input: CreatePlazaInput) => Plaza;
-  addPlazaEntry: (input: CreatePlazaEntryInput) => { ok: true; entry: PlazaEntry } | { ok: false; reason: "already_joined" | "complete" };
+  createPlaza: (input: CreatePlazaInput) => Promise<Plaza>;
+  addPlazaEntry: (input: CreatePlazaEntryInput) => Promise<CreatePlazaEntryResult>;
   mailboxItems: MailboxItem[];
-  markMailboxRead: (id: string) => void;
+  markMailboxRead: (id: string) => Promise<void>;
 };
 
 const AppStoreContext = createContext<AppStore | null>(null);
@@ -87,9 +87,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [isMemoriesLoading, setIsMemoriesLoading] = useState(false);
   const [objectCatalogVersion, setObjectCatalogVersion] = useState(0);
   const [roomObjectPositions, setRoomObjectPositions] = useState<Record<string, RoomObjectPosition>>(() => getInitialRoomObjectPositions());
-  const [plazas, setPlazas] = useState<Plaza[]>(() => plazaService.listPlazas());
-  const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>(() => plazaService.listEntries());
-  const [mailboxItems, setMailboxItems] = useState<MailboxItem[]>(() => mailboxService.list());
+  const [plazas, setPlazas] = useState<Plaza[]>([]);
+  const [plazaEntries, setPlazaEntries] = useState<PlazaEntry[]>([]);
+  const [mailboxItems, setMailboxItems] = useState<MailboxItem[]>([]);
 
   // 브라우저 뒤로가기/앞으로가기를 눌렀을 때 route 상태를 주소와 맞춥니다.
   useEffect(() => {
@@ -164,6 +164,82 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    // 광장 목록과 배치된 오브젝트도 DB 기준으로 읽어 새로고침 후 같은 상태를 유지합니다.
+    Promise.all([plazaService.listPlazas(), plazaService.listEntries()])
+      .then(([nextPlazas, nextEntries]) => {
+        if (!ignore) {
+          setPlazas(nextPlazas);
+          setPlazaEntries(nextEntries);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setPlazas([]);
+          setPlazaEntries([]);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user || user.isAdmin) {
+      setMailboxItems([]);
+      return;
+    }
+
+    let ignore = false;
+
+    // AI 업스케일링 완료 우편은 로그인 사용자 우편함 API에서 불러옵니다.
+    mailboxService
+      .list(user.id)
+      .then((items) => {
+        if (!ignore) {
+          setMailboxItems(items);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMailboxItems([]);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (route !== "/mailbox" || !user || user.isAdmin) {
+      return;
+    }
+
+    let ignore = false;
+
+    // 광장 완성 이미지는 백그라운드에서 도착하므로 우편함 화면에 들어올 때마다 최신 목록을 다시 읽습니다.
+    mailboxService
+      .list(user.id)
+      .then((items) => {
+        if (!ignore) {
+          setMailboxItems(items);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setMailboxItems([]);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [route, user]);
 
   const setTheme = useCallback((nextTheme: AppTheme) => {
     setThemeState(nextTheme);
@@ -260,25 +336,37 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const createPlaza = useCallback((input: CreatePlazaInput) => {
-    const plaza = plazaService.createPlaza(input);
-    setPlazas(plazaService.listPlazas());
+  const createPlaza = useCallback(async (input: CreatePlazaInput) => {
+    const plaza = await plazaService.createPlaza(input);
+    setPlazas(await plazaService.listPlazas());
     return plaza;
   }, []);
 
-  const addPlazaEntry = useCallback((input: CreatePlazaEntryInput) => {
-    const result = plazaService.createEntry(input);
+  const addPlazaEntry = useCallback(async (input: CreatePlazaEntryInput) => {
+    const result = await plazaService.createEntry(input);
 
     if (result.ok) {
-      setPlazaEntries(plazaService.listEntries());
+      setPlazaEntries(await plazaService.listEntries());
+      setPlazas(await plazaService.listPlazas());
+
+      // 마지막 참여로 광장이 완성되면 백엔드가 우편을 만들 수 있으므로 우편함도 다시 읽습니다.
+      if (user && !user.isAdmin) {
+        setMailboxItems(await mailboxService.list(user.id));
+      }
     }
 
     return result;
-  }, []);
+  }, [user]);
 
-  const markMailboxRead = useCallback((id: string) => {
-    setMailboxItems(mailboxService.markRead(id));
-  }, []);
+  const markMailboxRead = useCallback(async (id: string) => {
+    if (!user || user.isAdmin) {
+      return;
+    }
+
+    setMailboxItems((items) => items.map((item) => (item.id === id ? { ...item, read: true } : item)));
+    const updatedItem = await mailboxService.markRead(user.id, id);
+    setMailboxItems((items) => items.map((item) => (item.id === id ? updatedItem : item)));
+  }, [user]);
 
   const value = useMemo<AppStore>(
     // Context 값은 여러 컴포넌트가 읽으므로 useMemo로 불필요한 객체 재생성을 줄입니다.

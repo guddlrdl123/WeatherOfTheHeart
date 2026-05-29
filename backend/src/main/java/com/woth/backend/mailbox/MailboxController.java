@@ -41,6 +41,8 @@ public class MailboxController {
                 letter.getTitle(),
                 letter.getMessage(),
                 letter.getPlazaTitle(),
+                letter.getPlazaId(),
+                letter.getGeneratedImageData(),
                 letter.getCompletedAt().toString(),
                 letter.getIsRead()
         );
@@ -51,6 +53,8 @@ public class MailboxController {
             String title,
             String message,
             String plazaTitle,
+            Long plazaId,
+            String generatedImageData,
             String completedAt,
             Boolean read
     ) {

@@ -4,6 +4,8 @@ export type MailboxItem = {
   title: string;
   message: string;
   plazaTitle: string;
+  plazaId?: string;
+  generatedImageData?: string;
   completedAt: string;
   read: boolean;
 };

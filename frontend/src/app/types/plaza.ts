@@ -17,6 +17,7 @@ export type Plaza = {
   backgroundType?: PlazaBackgroundType;
   backgroundColor?: string;
   backgroundKey: WeatherKey;
+  completedAt?: string;
   createdAt: string;
 };
 

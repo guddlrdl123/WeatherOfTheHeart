@@ -53,6 +53,13 @@ function MailboxModal({ item, onClose }: { item: MailboxItem; onClose: () => voi
             <X size={17} />
           </button>
         </div>
+        {item.generatedImageData && (
+          <img
+            src={item.generatedImageData}
+            alt={`${item.plazaTitle} 완성 이미지`}
+            className="mb-5 aspect-square w-full rounded-md border border-white/10 object-cover"
+          />
+        )}
         <p className="text-sm leading-8 text-white/56">{item.message}</p>
         <p className="mt-5 rounded-md border border-white/8 bg-white/[0.03] p-4 text-sm text-white/42">관련 광장: {item.plazaTitle}</p>
       </section>

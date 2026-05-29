@@ -19,7 +19,8 @@ public class CorsConfig implements WebMvcConfigurer {
                         "http://localhost:*",
                         "http://127.0.0.1:*"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                // 우편 읽음 처리는 PATCH를 사용하므로 preflight 요청에서도 PATCH를 허용합니다.
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);

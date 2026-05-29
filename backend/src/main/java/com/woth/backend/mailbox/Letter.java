@@ -39,6 +39,12 @@ public class Letter {
     @Column(name = "plaza_title", nullable = false, length = 100)
     private String plazaTitle; // 완료된 광장의 제목
 
+    @Column(name = "plaza_id")
+    private Long plazaId; // 같은 광장 완료 우편이 중복 발송되지 않도록 추적하는 광장 ID
+
+    @Column(name = "generated_image_data", columnDefinition = "LONGTEXT")
+    private String generatedImageData; // AI가 생성한 완성 광장 이미지 data URL(base64). 추후 S3 URL로 교체 가능
+
     @Column(name = "completed_at", nullable = false)
     private LocalDateTime completedAt; // 광장 완료 시각
 
@@ -63,5 +69,10 @@ public class Letter {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markRead() {
+        // 읽음 처리는 기존 편지 내용을 보존하고 isRead 값만 바꿉니다.
+        this.isRead = true;
     }
 }

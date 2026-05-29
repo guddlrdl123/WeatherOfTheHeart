@@ -5,9 +5,23 @@ package com.woth.backend.plaza;
  * 활성화된 광장 목록을 정렬하여 조회하는 메서드를 제공합니다.
  */
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PlazaRepository extends JpaRepository<Plaza, Long> {
     List<Plaza> findAllByIsActiveTrueOrderByCreatedAtDesc();
+
+    @Modifying
+    @Query("""
+            update Plaza p
+            set p.completedAt = :completedAt,
+                p.updatedAt = :completedAt
+            where p.id = :plazaId
+              and p.completedAt is null
+            """)
+    int markCompletedIfNotAlready(@Param("plazaId") Long plazaId, @Param("completedAt") LocalDateTime completedAt);
 }

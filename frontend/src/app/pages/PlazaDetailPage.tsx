@@ -34,6 +34,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const [showMineOnly, setShowMineOnly] = useState(false);
   const [popupRecord, setPopupRecord] = useState<SceneObjectRecord | null>(null);
   const [pendingEntry, setPendingEntry] = useState<PendingPlazaEntry | null>(null);
+  const [isCompletingPlacement, setIsCompletingPlacement] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -120,8 +121,8 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     setToast("오브젝트를 드래그해 원하는 위치에 놓고 완료를 눌러주세요.");
   }
 
-  function handleCompletePlacement() {
-    if (!user || !pendingEntry || !plaza) {
+  async function handleCompletePlacement() {
+    if (!user || !pendingEntry || !plaza || isCompletingPlacement) {
       return;
     }
 
@@ -140,26 +141,39 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
       return;
     }
 
-    const result = addPlazaEntry({
-      plazaId: plaza.id,
-      ownerId: user.id,
-      title: pendingEntry.title,
-      content: pendingEntry.content,
-      moodKey: pendingEntry.moodKey,
-      weatherKey: pendingEntry.weatherKey,
-      objectKey: pendingEntry.objectKey,
-      slotKey: pendingEntry.slotKey,
-      positionX: pendingEntry.positionX,
-      positionY: pendingEntry.positionY,
-    });
+    setIsCompletingPlacement(true);
 
-    if (!result.ok) {
-      setToast(result.reason === "already_joined" ? "이 광장에는 한 번만 이야기를 남길 수 있어요." : "이 광장은 이미 완성되었어요.");
-      return;
+    try {
+      // 완료 버튼 중복 클릭으로 같은 광장에 여러 저장 요청이 날아가지 않도록 처리 중 상태를 둡니다.
+      const result = await addPlazaEntry({
+        plazaId: plaza.id,
+        ownerId: user.id,
+        title: pendingEntry.title,
+        content: pendingEntry.content,
+        moodKey: pendingEntry.moodKey,
+        weatherKey: pendingEntry.weatherKey,
+        objectKey: pendingEntry.objectKey,
+        slotKey: pendingEntry.slotKey,
+        positionX: pendingEntry.positionX,
+        positionY: pendingEntry.positionY,
+      });
+
+      if (!result.ok) {
+        if (result.reason === "already_joined") {
+          setToast("이 광장에는 한 번만 이야기를 남길 수 있어요.");
+        } else if (result.reason === "duplicate_object") {
+          setToast("이 광장에는 같은 오브젝트가 이미 놓여 있어요.");
+        } else {
+          setToast("이 광장은 이미 완성되었어요.");
+        }
+        return;
+      }
+
+      setPendingEntry(null);
+      setToast(entries.length + 1 >= plaza.maxObjects ? "광장이 완성되었어요. 사진은 잠시 뒤 우편함에 도착해요." : "광장에 오브젝트가 조용히 놓였어요.");
+    } finally {
+      setIsCompletingPlacement(false);
     }
-
-    setPendingEntry(null);
-    setToast("광장에 오브젝트가 조용히 놓였어요.");
   }
 
   return (
@@ -240,10 +254,11 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
             <button
               type="button"
               onClick={handleCompletePlacement}
-              className="mw-button-solid inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm"
+              disabled={isCompletingPlacement}
+              className="mw-button-solid inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45"
             >
               <Check size={16} />
-              완료
+              {isCompletingPlacement ? "저장 중" : "완료"}
             </button>
           </div>
         </div>

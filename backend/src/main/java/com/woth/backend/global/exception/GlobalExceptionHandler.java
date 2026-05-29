@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
         e.printStackTrace();
         ApiResponse<Object> response = ApiResponse.builder()
                 .status("ERROR")
-                .message("서버 내부 오류가 발생했습니다.")
+                .message("서버 내부 오류가 발생했습니다. " + e.getClass().getSimpleName() + ": " + e.getMessage())
                 .data(null)
                 .build();
         return ResponseEntity.internalServerError().body(response);

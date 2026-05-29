@@ -87,6 +87,33 @@ public class OpenAiClient {
 		                .block();
 	}
 
+	public String generateImageDataUrl(String prompt) {
+		ResolvedApiKey resolvedApiKey = resolveApiKey();
+
+		if (resolvedApiKey.value().isBlank()) {
+			throw new CustomException(ErrorCode.AI_API_KEY_MISSING);
+		}
+
+		Map<String, Object> requestBody = Map.of(
+				"model", "gpt-image-1",
+				"prompt", prompt,
+				"n", 1,
+				"size", "1024x1024",
+				"quality", "medium"
+		);
+
+		return webClient.post()
+		                .uri("/images/generations")
+		                .header(HttpHeaders.AUTHORIZATION, "Bearer " + resolvedApiKey.value())
+		                .contentType(MediaType.APPLICATION_JSON)
+		                .bodyValue(requestBody)
+		                .retrieve()
+		                .bodyToMono(String.class)
+		                .map(this::parseResponseBody)
+		                .map(this::extractImageDataUrl)
+		                .block();
+	}
+
 	private JsonNode parseResponseBody(String responseBody) {
 		try {
 			return objectMapper.readTree(responseBody);
@@ -106,6 +133,17 @@ public class OpenAiClient {
 		}
 
 		return content.asText();
+	}
+
+	private String extractImageDataUrl(JsonNode json) {
+		JsonNode image = json.path("data").path(0).path("b64_json");
+
+		if (image.isMissingNode() || image.asText().isBlank()) {
+			throw new CustomException(ErrorCode.AI_API_ERROR);
+		}
+
+		// 프론트가 별도 파일 저장소 없이 바로 렌더링할 수 있도록 data URL 형태로 내려보냅니다.
+		return "data:image/png;base64," + image.asText();
 	}
 
 	private ResolvedApiKey resolveApiKey() {

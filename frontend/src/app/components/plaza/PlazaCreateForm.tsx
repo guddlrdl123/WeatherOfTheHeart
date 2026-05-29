@@ -29,6 +29,7 @@ export function PlazaCreateForm() {
   const [backgroundColor, setBackgroundColor] = useState(PLAZA_BACKGROUND_COLORS[0].value);
   const [backgroundKey, setBackgroundKey] = useState<WeatherKey>("night");
   const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const selectedColor = PLAZA_BACKGROUND_COLORS.find((color) => color.value === backgroundColor) ?? PLAZA_BACKGROUND_COLORS[0];
   const selectedWeather = WEATHER_BY_KEY[backgroundKey] ?? WEATHER_BY_KEY.cloudy;
@@ -44,9 +45,13 @@ export function PlazaCreateForm() {
     setMaxObjects(Math.min(MAX_PLAZA_OBJECTS, Math.max(MIN_PLAZA_OBJECTS, nextValue)));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    if (isSaving) {
+      return;
+    }
 
     if (title.trim().length < 2) {
       setError("광장 제목을 2자 이상 입력해주세요.");
@@ -58,19 +63,28 @@ export function PlazaCreateForm() {
       return;
     }
 
-    const plaza = createPlaza({
-      title: title.trim(),
-      topic: topic.trim(),
-      maxObjects,
-      allowSearch,
-      allowInvite,
-      allowDuplicateObjects,
-      backgroundType,
-      backgroundColor: backgroundType === "color" ? selectedColor.value : undefined,
-      backgroundKey,
-    });
+    setIsSaving(true);
 
-    navigate(`/plazas/${plaza.id}`);
+    try {
+      // 광장 설정은 백엔드 DB에 저장한 뒤, 서버가 내려준 id로 상세 화면에 진입합니다.
+      const plaza = await createPlaza({
+        title: title.trim(),
+        topic: topic.trim(),
+        maxObjects,
+        allowSearch,
+        allowInvite,
+        allowDuplicateObjects,
+        backgroundType,
+        backgroundColor: backgroundType === "color" ? selectedColor.value : undefined,
+        backgroundKey,
+      });
+
+      navigate(`/plazas/${plaza.id}`);
+    } catch {
+      setError("광장을 만드는 중 문제가 생겼어요.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -222,8 +236,8 @@ export function PlazaCreateForm() {
         <button type="button" onClick={() => navigate("/plazas")} className="mw-button rounded-md px-5 py-2 text-sm">
           취소
         </button>
-        <button type="submit" className="mw-button-solid rounded-md px-5 py-2 text-sm">
-          광장 만들기
+        <button type="submit" disabled={isSaving} className="mw-button-solid rounded-md px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-45">
+          {isSaving ? "만드는 중" : "광장 만들기"}
         </button>
       </div>
     </form>

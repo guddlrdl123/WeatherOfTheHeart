@@ -10,9 +10,10 @@ spring:
 
   # 이번 DB 연결 변경: 로컬 MySQL의 woth 스키마를 실제 저장소로 사용합니다.
   datasource:
-    url: jdbc:mysql://localhost:3306/woth?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: "woth1234"
+    # DB 접속 정보는 .env의 DB_URL/DB_USERNAME/DB_PASSWORD가 있으면 우선 사용하고, 없으면 로컬 기본값을 사용합니다.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/woth?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

@@ -48,6 +48,12 @@ public class PlazaEntry {
     @Column(name = "slot_key", nullable = false, length = 100)
     private String slotKey;
 
+    @Column(name = "position_x")
+    private Integer positionX; // 광장 안에서 사용자가 배치한 오브젝트 X 좌표
+
+    @Column(name = "position_y")
+    private Integer positionY; // 광장 안에서 사용자가 배치한 오브젝트 Y 좌표
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

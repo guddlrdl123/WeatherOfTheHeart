@@ -47,9 +47,20 @@ public class PlazaController {
                         request.allowSearch(),
                         request.allowInvite(),
                         request.allowDuplicateObjects(),
+                        request.backgroundType(),
+                        request.backgroundColor(),
                         request.backgroundKey()
                 )
         )));
+    }
+
+    @GetMapping("/entries")
+    @Transactional(readOnly = true)
+    public ApiResponse<List<PlazaEntryResponse>> listAllEntries() {
+        List<PlazaEntryResponse> entries = plazaService.listAllEntries().stream()
+                .map(this::toEntryResponse)
+                .collect(Collectors.toList());
+        return ApiResponse.success(entries);
     }
 
     @GetMapping("/{plazaId}/entries")
@@ -70,7 +81,9 @@ public class PlazaController {
                 request.moodKey(),
                 request.weatherKey(),
                 request.objectKey(),
-                request.slotKey()
+                request.slotKey(),
+                request.positionX(),
+                request.positionY()
         ));
         return ApiResponse.success(toEntryResponse(entry));
     }
@@ -84,7 +97,10 @@ public class PlazaController {
                 plaza.getAllowSearch(),
                 plaza.getAllowInvite(),
                 plaza.getAllowDuplicateObjects(),
+                plaza.getBackgroundType(),
+                plaza.getBackgroundColor(),
                 plaza.getBackgroundKey(),
+                plaza.getCompletedAt() == null ? null : plaza.getCompletedAt().toString(),
                 plaza.getCreatedAt().toString(),
                 plaza.getUpdatedAt().toString()
         );
@@ -101,6 +117,8 @@ public class PlazaController {
                 entry.getWeatherKey(),
                 entry.getObjectKey(),
                 entry.getSlotKey(),
+                entry.getPositionX(),
+                entry.getPositionY(),
                 entry.getCreatedAt().toString(),
                 entry.getUpdatedAt().toString()
         );
@@ -113,6 +131,8 @@ public class PlazaController {
             Boolean allowSearch,
             Boolean allowInvite,
             Boolean allowDuplicateObjects,
+            String backgroundType,
+            String backgroundColor,
             String backgroundKey
     ) {
     }
@@ -124,7 +144,9 @@ public class PlazaController {
             String moodKey,
             String weatherKey,
             String objectKey,
-            String slotKey
+            String slotKey,
+            Integer positionX,
+            Integer positionY
     ) {
     }
 
@@ -136,7 +158,10 @@ public class PlazaController {
             Boolean allowSearch,
             Boolean allowInvite,
             Boolean allowDuplicateObjects,
+            String backgroundType,
+            String backgroundColor,
             String backgroundKey,
+            String completedAt,
             String createdAt,
             String updatedAt
     ) {
@@ -152,6 +177,8 @@ public class PlazaController {
             String weatherKey,
             String objectKey,
             String slotKey,
+            Integer positionX,
+            Integer positionY,
             String createdAt,
             String updatedAt
     ) {

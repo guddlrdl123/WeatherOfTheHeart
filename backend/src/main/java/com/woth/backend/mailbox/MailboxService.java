@@ -6,10 +6,13 @@ package com.woth.backend.mailbox;
  */
 import com.woth.backend.global.exception.CustomException;
 import com.woth.backend.global.exception.ErrorCode;
+import com.woth.backend.user.User;
 import com.woth.backend.user.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -36,20 +39,38 @@ public class MailboxService {
         Letter letter = letterRepository.findById(letterId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MAILBOX_NOT_FOUND));
         if (!letter.getIsRead()) {
-            letter = Letter.builder()
-                    .id(letter.getId())
-                    .sender(letter.getSender())
-                    .receiver(letter.getReceiver())
-                    .title(letter.getTitle())
-                    .message(letter.getMessage())
-                    .plazaTitle(letter.getPlazaTitle())
-                    .completedAt(letter.getCompletedAt())
-                    .isRead(true)
-                    .createdAt(letter.getCreatedAt())
-                    .updatedAt(letter.getUpdatedAt())
-                    .build();
+            letter.markRead();
             return letterRepository.save(letter);
         }
         return letter;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void sendPlazaCompletionLetters(
+            Long plazaId,
+            String plazaTitle,
+            LocalDateTime completedAt,
+            List<User> receivers,
+            String generatedImageData
+    ) {
+        // 광장이 완성되면 참여자 전원에게 같은 AI 완성 이미지를 담은 우편을 보냅니다.
+        for (User receiver : receivers) {
+            if (letterRepository.existsByReceiverIdAndPlazaId(receiver.getId(), plazaId)) {
+                continue;
+            }
+
+            User managedReceiver = userRepository.getReferenceById(receiver.getId());
+            Letter letter = Letter.builder()
+                    // 비동기 완료 처리에서 넘어온 User는 detached 상태일 수 있어 새 트랜잭션의 참조로 다시 연결합니다.
+                    .receiver(managedReceiver)
+                    .title("완성된 광장의 사진이 도착했어요")
+                    .message("함께 남긴 오브젝트들이 하나의 광장으로 완성되었어요. 우편에 담긴 이미지를 열어 그날의 광장을 확인해 주세요.")
+                    .plazaTitle(plazaTitle)
+                    .plazaId(plazaId)
+                    .generatedImageData(generatedImageData)
+                    .completedAt(completedAt)
+                    .build();
+            letterRepository.save(letter);
+        }
     }
 }
