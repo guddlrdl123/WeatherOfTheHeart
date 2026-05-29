@@ -12,7 +12,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/woth?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
-    password: "1234"
+    password: "woth1234"
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
