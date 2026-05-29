@@ -4,6 +4,15 @@ import { createId, readStorage, writeStorage } from "../lib/storage";
 
 const PLAZAS_KEY = "maeum-weather:plazas";
 const PLAZA_ENTRIES_KEY = "maeum-weather:plaza-entries";
+const MAX_PLAZA_OBJECTS = 30;
+
+function normalizePlaza(plaza: Plaza): Plaza {
+  return {
+    ...plaza,
+    maxObjects: Math.min(MAX_PLAZA_OBJECTS, Math.max(1, plaza.maxObjects)),
+    backgroundType: plaza.backgroundType ?? "weather",
+  };
+}
 
 // 생성 시점에 서비스가 자동으로 채우는 필드를 입력값에서 제외합니다.
 export type CreatePlazaInput = Omit<Plaza, "id" | "createdAt">;
@@ -13,7 +22,7 @@ export type CreatePlazaEntryInput = Omit<PlazaEntry, "id" | "createdAt" | "updat
 export const plazaService = {
   listPlazas(): Plaza[] {
     const plazas = readStorage<Plaza[]>(PLAZAS_KEY, MOCK_PLAZAS);
-    return Array.isArray(plazas) ? plazas : MOCK_PLAZAS;
+    return (Array.isArray(plazas) ? plazas : MOCK_PLAZAS).map(normalizePlaza);
   },
 
   savePlazas(plazas: Plaza[]) {
@@ -24,6 +33,8 @@ export const plazaService = {
     const plazas = this.listPlazas();
     const plaza: Plaza = {
       ...input,
+      maxObjects: Math.min(MAX_PLAZA_OBJECTS, Math.max(1, input.maxObjects)),
+      backgroundType: input.backgroundType ?? "weather",
       id: createId("plaza"),
       createdAt: new Date().toISOString(),
     };

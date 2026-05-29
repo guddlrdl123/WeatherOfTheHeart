@@ -6,17 +6,25 @@ import { WeatherEffect } from "./WeatherEffect";
 import { RoomObjectLayer } from "../object/RoomObjectLayer";
 import { RoomObjectItem, type SceneObjectRecord } from "../object/RoomObjectItem";
 
-// 라이트 모드에서는 기존 다크 날씨 색을 그대로 쓰면 너무 어두워서 별도 톤을 둡니다.
-const LIGHT_SCENE_TONES: Record<
-  WeatherKey,
-  {
-    wall: string;
-    wallTop: string;
-    floor: string;
-    windowTop: string;
-    windowBottom: string;
-  }
-> = {
+type SceneTone = {
+  wall: string;
+  wallTop: string;
+  floor: string;
+  windowTop: string;
+  windowBottom: string;
+};
+
+type PlazaSceneBackground =
+  | {
+      type: "color";
+      color: string;
+    }
+  | {
+      type: "weather";
+      weatherKey: WeatherKey;
+    };
+
+const LIGHT_SCENE_TONES: Record<WeatherKey, SceneTone> = {
   sunny: {
     wall: "#efe4d3",
     wallTop: "#f6eddd",
@@ -61,11 +69,60 @@ const LIGHT_SCENE_TONES: Record<
   },
 };
 
+const FALLBACK_PLAZA_COLOR = "#65717c";
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-// 창문, 바닥, 침대/광장 바닥, 날씨 효과, 오브젝트 레이어를 합쳐 하나의 장면을 만듭니다.
+function normalizeHexColor(color: string) {
+  const trimmedColor = color.trim();
+
+  if (/^#[0-9a-f]{6}$/i.test(trimmedColor)) {
+    return trimmedColor;
+  }
+
+  if (/^#[0-9a-f]{3}$/i.test(trimmedColor)) {
+    return `#${trimmedColor
+      .slice(1)
+      .split("")
+      .map((value) => value + value)
+      .join("")}`;
+  }
+
+  return FALLBACK_PLAZA_COLOR;
+}
+
+function hexToRgb(color: string) {
+  const safeColor = normalizeHexColor(color).slice(1);
+
+  return {
+    r: Number.parseInt(safeColor.slice(0, 2), 16),
+    g: Number.parseInt(safeColor.slice(2, 4), 16),
+    b: Number.parseInt(safeColor.slice(4, 6), 16),
+  };
+}
+
+function mixHexColor(color: string, targetColor: string, amount: number) {
+  const from = hexToRgb(color);
+  const to = hexToRgb(targetColor);
+  const mix = (fromValue: number, toValue: number) => Math.round(fromValue + (toValue - fromValue) * amount);
+
+  return `rgb(${mix(from.r, to.r)}, ${mix(from.g, to.g)}, ${mix(from.b, to.b)})`;
+}
+
+function getColorScene(color: string): SceneTone {
+  const safeColor = normalizeHexColor(color);
+
+  return {
+    wall: safeColor,
+    wallTop: mixHexColor(safeColor, "#ffffff", 0.2),
+    floor: mixHexColor(safeColor, "#000000", 0.18),
+    windowTop: mixHexColor(safeColor, "#ffffff", 0.28),
+    windowBottom: mixHexColor(safeColor, "#000000", 0.22),
+  };
+}
+
 export function RoomScene({
   weatherKey,
   records,
@@ -76,6 +133,7 @@ export function RoomScene({
   label,
   placementRecord,
   onPlacementMove,
+  plazaBackground,
 }: {
   weatherKey: WeatherKey;
   records: SceneObjectRecord[];
@@ -86,14 +144,16 @@ export function RoomScene({
   label?: string;
   placementRecord?: SceneObjectRecord | null;
   onPlacementMove?: (position: { x: number; y: number }) => void;
+  plazaBackground?: PlazaSceneBackground;
 }) {
   const sceneRef = useRef<HTMLElement | null>(null);
   const isDraggingPlacementRef = useRef(false);
   const { theme } = useAppStore();
-  const safeWeatherKey = WEATHER_BY_KEY[weatherKey] ? weatherKey : "cloudy";
+  const requestedWeatherKey = mode === "plaza" && plazaBackground?.type === "weather" ? plazaBackground.weatherKey : weatherKey;
+  const safeWeatherKey = WEATHER_BY_KEY[requestedWeatherKey] ? requestedWeatherKey : "cloudy";
   const weather = WEATHER_BY_KEY[safeWeatherKey];
-  // 현재 테마에 맞춰 방 전체 색감과 창밖 색을 고릅니다.
-  const scene = theme === "light" ? LIGHT_SCENE_TONES[safeWeatherKey] : weather;
+  const plazaColor = mode === "plaza" && plazaBackground?.type === "color" ? normalizeHexColor(plazaBackground.color) : null;
+  const scene = plazaColor ? getColorScene(plazaColor) : theme === "light" ? LIGHT_SCENE_TONES[safeWeatherKey] : weather;
 
   function updatePlacementPosition(clientX: number, clientY: number) {
     const rect = sceneRef.current?.getBoundingClientRect();
@@ -173,6 +233,8 @@ export function RoomScene({
         </>
       )}
 
+      {mode === "plaza" && !plazaColor && <WeatherEffect weatherKey={safeWeatherKey} />}
+
       <RoomObjectLayer
         records={records}
         mode={mode}
@@ -196,8 +258,17 @@ export function RoomScene({
       )}
 
       <div className="absolute left-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-black/10 px-3 py-1 text-[0.72rem] text-white/52">
-        <span>{weather.icon}</span>
-        <span>{weather.label}</span>
+        {plazaColor ? (
+          <>
+            <span className="h-3 w-3 rounded-full border border-white/20" style={{ background: plazaColor }} />
+            <span>배경색</span>
+          </>
+        ) : (
+          <>
+            <span>{weather.icon}</span>
+            <span>{weather.label}</span>
+          </>
+        )}
       </div>
 
       <div className="absolute right-5 top-5 max-w-[300px] text-right text-[0.78rem] leading-6 text-white/36">

@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { MOOD_OPTIONS } from "../../constants/moods";
 import { OBJECT_BY_KEY, ROOM_OBJECTS } from "../../constants/objects";
-import { WEATHER_OPTIONS } from "../../constants/weather";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import type { Memory } from "../../types/memory";
 import type { ObjectSlotKey } from "../../types/object";
@@ -45,10 +44,10 @@ export function MemoryWriteModal({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [moodKey, setMoodKey] = useState<MoodKey>("calm");
-  const [weatherKey, setWeatherKey] = useState<WeatherKey>("cloudy");
   const [objectKey, setObjectKey] = useState(ROOM_OBJECTS[0]?.objectKey ?? "carpet");
   const [error, setError] = useState("");
   const today = useMemo(getTodayString, []);
+  const weatherKey: WeatherKey = "cloudy";
   const disabledObjectKeys = useMemo(() => {
     if (mode !== "private") {
       return [];
@@ -104,12 +103,12 @@ export function MemoryWriteModal({
     const object = OBJECT_BY_KEY[objectKey] ?? ROOM_OBJECTS[0];
 
     if (!object) {
-      setError("선택할 수 있는 사물이 없어요.");
+      setError("선택할 수 있는 오브젝트가 없어요.");
       return;
     }
 
     if (mode === "private" && disabledObjectKeySet.has(object.objectKey)) {
-      setError("이번 달 방에 이미 놓인 사물이에요. 다른 사물을 골라주세요.");
+      setError("이번 달 방에 이미 놓인 오브젝트예요. 다른 오브젝트를 골라주세요.");
       return;
     }
 
@@ -126,12 +125,12 @@ export function MemoryWriteModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 backdrop-blur-sm">
-      <form onSubmit={handleSubmit} className="mw-fade-in mw-surface max-h-[92vh] w-full max-w-[760px] overflow-y-auto rounded-xl p-6">
+      <form onSubmit={handleSubmit} className="mw-fade-in mw-surface max-h-[92vh] w-full max-w-[760px] select-text overflow-y-auto rounded-xl p-6">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-white/28">{mode === "plaza" ? "PLAZA NOTE" : "ROOM NOTE"}</p>
             <h2 className="text-xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
-              {mode === "plaza" ? "광장에 이야기를 놓아주세요" : "작은 메모지에 오늘을 남겨주세요"}
+              {mode === "plaza" ? "광장에 이야기를 놓아주세요." : "작은 메모지에 오늘을 남겨주세요."}
             </h2>
           </div>
           <button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-md border border-white/10 hover:bg-white/5" aria-label="닫기">
@@ -141,7 +140,7 @@ export function MemoryWriteModal({
 
         {(existingMemory || existingNotice) && (
           <div className="mb-5 rounded-md border border-[#c8966a]/25 bg-[#c8966a]/10 p-4 text-sm leading-7 text-[#e0d2ba]">
-            {existingNotice ?? "이미 이 날짜의 이야기가 방에 남아 있어요. 사물을 눌러 그날의 글을 볼 수 있습니다."}
+            {existingNotice ?? "이미 이 날짜의 이야기가 방에 남아 있어요. 오브젝트를 눌러 그날의 글을 볼 수 있습니다."}
           </div>
         )}
 
@@ -185,7 +184,7 @@ export function MemoryWriteModal({
           </div>
 
           <div className="flex flex-col gap-4">
-            {mode === "private" ? (
+            {mode === "private" && (
               <div>
                 <p className="mb-2 text-sm text-white/54">오늘의 기분</p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -211,39 +210,10 @@ export function MemoryWriteModal({
                   })}
                 </div>
               </div>
-            ) : (
-              <div>
-                <p className="mb-2 text-sm text-white/54">마음 상태와 날씨</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {WEATHER_OPTIONS.map((weather) => {
-                    const selected = weatherKey === weather.key;
-
-                    return (
-                      <button
-                        key={weather.key}
-                        type="button"
-                        disabled={isSaving}
-                        onClick={() => {
-                          setMoodKey(weather.key);
-                          setWeatherKey(weather.key);
-                        }}
-                        className="rounded-md border px-3 py-2 text-left text-sm transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-45"
-                        style={{
-                          borderColor: selected ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
-                          background: selected ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
-                        }}
-                      >
-                        <span className="mr-2">{weather.icon}</span>
-                        {weather.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
             )}
 
             <div>
-              <p className="mb-2 text-sm text-white/54">이야기를 담을 사물을 골라주세요</p>
+              <p className="mb-2 text-sm text-white/54">이야기를 담을 오브젝트를 골라주세요.</p>
               <ObjectPicker value={objectKey} scope={mode} disabledObjectKeys={disabledObjectKeys} onChange={(object) => setObjectKey(object.objectKey)} />
             </div>
           </div>

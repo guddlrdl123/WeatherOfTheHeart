@@ -1,9 +1,22 @@
 import { FormEvent, useState } from "react";
-import { WEATHER_OPTIONS } from "../../constants/weather";
+import { CloudSun, Palette } from "lucide-react";
+import { WEATHER_BY_KEY, WEATHER_OPTIONS } from "../../constants/weather";
 import { useAppStore } from "../../stores/AppStore";
+import type { PlazaBackgroundType } from "../../types/plaza";
 import type { WeatherKey } from "../../types/weather";
 
-// 새 광장의 기본 설정을 입력받는 폼입니다.
+const MIN_PLAZA_OBJECTS = 3;
+const MAX_PLAZA_OBJECTS = 30;
+
+const PLAZA_BACKGROUND_COLORS = [
+  { key: "dawn", label: "새벽 분홍", value: "#8f6f7b" },
+  { key: "moss", label: "이끼 초록", value: "#4f6f62" },
+  { key: "ash", label: "차분한 회색", value: "#65717c" },
+  { key: "amber", label: "은은한 황토", value: "#8c6d4f" },
+  { key: "lake", label: "호수 파랑", value: "#4f6f8c" },
+  { key: "plum", label: "자두 보라", value: "#67577c" },
+];
+
 export function PlazaCreateForm() {
   const { createPlaza, navigate } = useAppStore();
   const [title, setTitle] = useState("");
@@ -12,8 +25,24 @@ export function PlazaCreateForm() {
   const [allowSearch, setAllowSearch] = useState(true);
   const [allowInvite, setAllowInvite] = useState(true);
   const [allowDuplicateObjects, setAllowDuplicateObjects] = useState(false);
+  const [backgroundType, setBackgroundType] = useState<PlazaBackgroundType>("color");
+  const [backgroundColor, setBackgroundColor] = useState(PLAZA_BACKGROUND_COLORS[0].value);
   const [backgroundKey, setBackgroundKey] = useState<WeatherKey>("night");
   const [error, setError] = useState("");
+
+  const selectedColor = PLAZA_BACKGROUND_COLORS.find((color) => color.value === backgroundColor) ?? PLAZA_BACKGROUND_COLORS[0];
+  const selectedWeather = WEATHER_BY_KEY[backgroundKey] ?? WEATHER_BY_KEY.cloudy;
+
+  function handleMaxObjectsChange(value: string) {
+    const nextValue = Number(value);
+
+    if (!Number.isFinite(nextValue)) {
+      setMaxObjects(MIN_PLAZA_OBJECTS);
+      return;
+    }
+
+    setMaxObjects(Math.min(MAX_PLAZA_OBJECTS, Math.max(MIN_PLAZA_OBJECTS, nextValue)));
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,9 +65,11 @@ export function PlazaCreateForm() {
       allowSearch,
       allowInvite,
       allowDuplicateObjects,
+      backgroundType,
+      backgroundColor: backgroundType === "color" ? selectedColor.value : undefined,
       backgroundKey,
     });
-    // 생성 직후 새 광장 상세 화면으로 이동합니다.
+
     navigate(`/plazas/${plaza.id}`);
   }
 
@@ -47,7 +78,7 @@ export function PlazaCreateForm() {
       <div className="mb-6">
         <p className="mb-2 text-[0.68rem] tracking-[0.2em] text-white/28">NEW PLAZA</p>
         <h1 className="text-2xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
-          나그네들이 머물 광장 만들기
+          새로운 광장 만들기
         </h1>
       </div>
 
@@ -57,15 +88,18 @@ export function PlazaCreateForm() {
           <input className="mw-input h-11 px-3 text-sm" value={title} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <label className="flex flex-col gap-2 text-sm text-white/54">
-          최대 오브젝트 수
+          최대 인원
           <input
             className="mw-input h-11 px-3 text-sm"
             type="number"
-            min={3}
-            max={24}
+            min={MIN_PLAZA_OBJECTS}
+            max={MAX_PLAZA_OBJECTS}
             value={maxObjects}
-            onChange={(event) => setMaxObjects(Number(event.target.value))}
+            onChange={(event) => handleMaxObjectsChange(event.target.value)}
           />
+          <span className="text-[0.72rem] leading-5 text-white/36">
+            오브젝트 수가 광장의 최대 인원입니다. 최대 {MAX_PLAZA_OBJECTS}명까지 참여할 수 있어요.
+          </span>
         </label>
       </div>
 
@@ -74,33 +108,96 @@ export function PlazaCreateForm() {
         <textarea
           className="mw-input min-h-[110px] resize-none p-3 text-sm leading-7"
           value={topic}
-          placeholder="예: 가장 외로웠던 밤에 남겨두고 싶은 것"
+          placeholder="함께 놓고 싶은 마음의 주제를 적어주세요."
           onChange={(event) => setTopic(event.target.value)}
         />
       </label>
 
       <div className="mt-5">
-        <p className="mb-2 text-sm text-white/54">배경 분위기</p>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-          {WEATHER_OPTIONS.map((weather) => {
-            const selected = backgroundKey === weather.key;
+        <p className="mb-2 text-sm text-white/54">배경 선택</p>
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setBackgroundType("color")}
+            className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition hover:bg-white/5"
+            style={{
+              borderColor: backgroundType === "color" ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
+              background: backgroundType === "color" ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
+            }}
+          >
+            <Palette size={16} />
+            배경 색상
+          </button>
+          <button
+            type="button"
+            onClick={() => setBackgroundType("weather")}
+            className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition hover:bg-white/5"
+            style={{
+              borderColor: backgroundType === "weather" ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
+              background: backgroundType === "weather" ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
+            }}
+          >
+            <CloudSun size={16} />
+            날씨 배경
+          </button>
+        </div>
 
-            return (
-              <button
-                type="button"
-                key={weather.key}
-                onClick={() => setBackgroundKey(weather.key)}
-                className="rounded-md border px-3 py-2 text-left text-sm hover:bg-white/5"
-                style={{
-                  borderColor: selected ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
-                  background: selected ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
-                }}
-              >
-                <span className="mr-2">{weather.icon}</span>
-                {weather.label}
-              </button>
-            );
-          })}
+        {backgroundType === "color" ? (
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            {PLAZA_BACKGROUND_COLORS.map((color) => {
+              const selected = backgroundColor === color.value;
+
+              return (
+                <button
+                  type="button"
+                  key={color.key}
+                  onClick={() => setBackgroundColor(color.value)}
+                  className="flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition hover:bg-white/5"
+                  style={{
+                    borderColor: selected ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
+                    background: selected ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
+                  }}
+                >
+                  <span className="h-5 w-5 rounded-full border border-white/20" style={{ background: color.value }} />
+                  {color.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            {WEATHER_OPTIONS.map((weather) => {
+              const selected = backgroundKey === weather.key;
+
+              return (
+                <button
+                  type="button"
+                  key={weather.key}
+                  onClick={() => setBackgroundKey(weather.key)}
+                  className="rounded-md border px-3 py-2 text-left text-sm transition hover:bg-white/5"
+                  style={{
+                    borderColor: selected ? "rgba(200,150,106,0.62)" : "rgba(255,255,255,0.08)",
+                    background: selected ? "rgba(200,150,106,0.12)" : "rgba(255,255,255,0.025)",
+                  }}
+                >
+                  <span className="mr-2">{weather.icon}</span>
+                  {weather.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div
+          className="mt-3 flex h-20 items-center justify-center rounded-md border border-white/8 text-sm text-white/62"
+          style={{
+            background:
+              backgroundType === "color"
+                ? `linear-gradient(135deg, ${selectedColor.value}, #0b1020)`
+                : `linear-gradient(135deg, ${selectedWeather.wallTop}, ${selectedWeather.wall})`,
+          }}
+        >
+          {backgroundType === "color" ? selectedColor.label : `${selectedWeather.icon} ${selectedWeather.label}`}
         </div>
       </div>
 

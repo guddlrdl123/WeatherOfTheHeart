@@ -3,6 +3,7 @@ import type { MoodKey, WeatherKey } from "./weather";
 
 // 광장의 상태는 현재 화면에서 참여 가능 여부를 계산할 때 사용합니다.
 export type PlazaStatus = "open" | "complete";
+export type PlazaBackgroundType = "color" | "weather";
 
 // 여러 사용자의 오브젝트가 함께 놓이는 공용 공간입니다.
 export type Plaza = {
@@ -13,6 +14,8 @@ export type Plaza = {
   allowSearch: boolean;
   allowInvite: boolean;
   allowDuplicateObjects: boolean;
+  backgroundType?: PlazaBackgroundType;
+  backgroundColor?: string;
   backgroundKey: WeatherKey;
   createdAt: string;
 };

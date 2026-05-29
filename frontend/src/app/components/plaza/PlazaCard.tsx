@@ -3,7 +3,8 @@ import { WEATHER_BY_KEY } from "../../constants/weather";
 import { useAppStore } from "../../stores/AppStore";
 import type { Plaza, PlazaStatus } from "../../types/plaza";
 
-// 광장 목록에서 사용하는 카드입니다.
+const FALLBACK_PLAZA_COLOR = "#65717c";
+
 export function PlazaCard({
   plaza,
   entryCount,
@@ -14,16 +15,25 @@ export function PlazaCard({
   hasMyEntry?: boolean;
 }) {
   const { navigate } = useAppStore();
-  const weather = WEATHER_BY_KEY[plaza.backgroundKey];
-  // 참여 수가 최대 오브젝트 수에 닿으면 완료 상태로 표시합니다.
+  const weather = WEATHER_BY_KEY[plaza.backgroundKey] ?? WEATHER_BY_KEY.cloudy;
+  const backgroundType = plaza.backgroundType ?? "weather";
   const status: PlazaStatus = entryCount >= plaza.maxObjects ? "complete" : "open";
 
   return (
-    <article className="mw-surface flex min-h-[250px] flex-col justify-between rounded-xl p-5">
+    <article className="mw-surface flex min-h-[250px] select-none flex-col justify-between rounded-xl p-5" onCopy={(event) => event.preventDefault()}>
       <div>
         <div className="mb-4 flex items-center justify-between gap-4">
-          <span className="rounded-full border border-white/10 px-3 py-1 text-[0.68rem] text-white/42">
-            {weather.icon} {weather.label}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-[0.68rem] text-white/42">
+            {backgroundType === "color" ? (
+              <>
+                <span className="h-3 w-3 rounded-full border border-white/20" style={{ background: plaza.backgroundColor ?? FALLBACK_PLAZA_COLOR }} />
+                배경색
+              </>
+            ) : (
+              <>
+                {weather.icon} {weather.label}
+              </>
+            )}
           </span>
           <div className="flex flex-wrap justify-end gap-2">
             {hasMyEntry && <span className="rounded-full border border-[#d8bd9a]/30 px-3 py-1 text-[0.68rem] text-[#d8bd9a]">참여함</span>}
@@ -55,7 +65,7 @@ export function PlazaCard({
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-sm text-white/42">
-            {entryCount} / {plaza.maxObjects}
+            {entryCount} / {plaza.maxObjects}명
           </span>
           <button
             type="button"

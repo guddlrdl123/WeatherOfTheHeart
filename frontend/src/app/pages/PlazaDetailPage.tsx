@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ClipboardEvent } from "react";
 import { Check, Eye, PenLine, X } from "lucide-react";
 import { WEATHER_BY_KEY } from "../constants/weather";
 import { MemoryPopup } from "../components/room/MemoryPopup";
@@ -15,8 +15,18 @@ type PendingPlazaEntry = WriteModalValue & {
 };
 
 const DEFAULT_PLACEMENT_POSITION = { x: 50, y: 68 };
+const FALLBACK_PLAZA_COLOR = "#65717c";
 
-// 광장 하나의 상세 장면과 글 남기기 흐름을 담당합니다.
+function handlePlazaCopy(event: ClipboardEvent<HTMLElement>) {
+  const target = event.target;
+
+  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+    return;
+  }
+
+  event.preventDefault();
+}
+
 export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const { plazas, plazaEntries, user, addPlazaEntry, navigate } = useAppStore();
   const plaza = plazas.find((item) => item.id === plazaId);
@@ -26,7 +36,6 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   const [pendingEntry, setPendingEntry] = useState<PendingPlazaEntry | null>(null);
   const [toast, setToast] = useState("");
 
-  // 저장 안내 문구는 잠깐 보여준 뒤 자동으로 사라지게 합니다.
   useEffect(() => {
     if (!toast) {
       return;
@@ -36,7 +45,6 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  // 현재 광장에 속한 entry만 골라 장면에 넘깁니다.
   const entries = useMemo(() => plazaEntries.filter((entry) => entry.plazaId === plazaId), [plazaEntries, plazaId]);
   const myEntry = user ? entries.find((entry) => entry.ownerId === user.id) : undefined;
   const records: SceneObjectRecord[] = entries.map((entry) => ({ ...entry, weatherKey: entry.weatherKey }));
@@ -58,7 +66,6 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
         }
       : null;
 
-  // 주소에 존재하지 않는 plazaId가 들어오면 목록으로 돌아갈 수 있게 안내합니다.
   if (!plaza) {
     return (
       <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-[720px] items-center justify-center px-5">
@@ -74,7 +81,12 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     );
   }
 
-  const weather = WEATHER_BY_KEY[plaza.backgroundKey];
+  const weather = WEATHER_BY_KEY[plaza.backgroundKey] ?? WEATHER_BY_KEY.cloudy;
+  const backgroundType = plaza.backgroundType ?? "weather";
+  const plazaBackground =
+    backgroundType === "color"
+      ? ({ type: "color", color: plaza.backgroundColor ?? FALLBACK_PLAZA_COLOR } as const)
+      : ({ type: "weather", weatherKey: plaza.backgroundKey } as const);
   const complete = entries.length >= plaza.maxObjects;
 
   function handleSave(value: WriteModalValue) {
@@ -83,7 +95,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     }
 
     if (myEntry || pendingEntry) {
-      setToast("한 광장에는 한 번만 이야기를 남길 수 있어요.");
+      setToast("이 광장에는 한 번만 이야기를 남길 수 있어요.");
       return;
     }
 
@@ -93,7 +105,6 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     }
 
     if (!plaza.allowDuplicateObjects && entries.some((entry) => entry.objectKey === value.objectKey)) {
-      // 중복 오브젝트를 허용하지 않는 광장에서는 이미 놓인 오브젝트를 다시 쓸 수 없습니다.
       setToast("이 광장에는 같은 오브젝트가 이미 놓여 있어요.");
       return;
     }
@@ -106,7 +117,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     setIsWriteOpen(false);
     setShowMineOnly(false);
     setPopupRecord(null);
-    setToast("광장 위 사물을 잡고 원하는 위치로 옮긴 뒤 완료를 눌러주세요.");
+    setToast("오브젝트를 드래그해 원하는 위치에 놓고 완료를 눌러주세요.");
   }
 
   function handleCompletePlacement() {
@@ -115,7 +126,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     }
 
     if (myEntry) {
-      setToast("한 광장에는 한 번만 이야기를 남길 수 있어요.");
+      setToast("이 광장에는 한 번만 이야기를 남길 수 있어요.");
       return;
     }
 
@@ -143,7 +154,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
     });
 
     if (!result.ok) {
-      setToast(result.reason === "already_joined" ? "한 광장에는 한 번만 이야기를 남길 수 있어요." : "이 광장은 이미 완성되었어요.");
+      setToast(result.reason === "already_joined" ? "이 광장에는 한 번만 이야기를 남길 수 있어요." : "이 광장은 이미 완성되었어요.");
       return;
     }
 
@@ -152,11 +163,11 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
   }
 
   return (
-    <main className="mx-auto max-w-[1280px] px-5 py-7">
+    <main className="mx-auto max-w-[1280px] select-none px-5 py-7" onCopy={handlePlazaCopy} onCut={handlePlazaCopy}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <button type="button" onClick={() => navigate("/plazas")} className="mb-3 text-sm text-white/42 hover:text-white/62">
-            ← 광장 목록
+            광장 목록
           </button>
           <p className="mb-2 text-[0.68rem] tracking-[0.22em] text-white/28">PLAZA DETAIL</p>
           <h1 className="text-3xl font-normal text-[#e0d2ba]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
@@ -165,8 +176,17 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
           <p className="mt-3 max-w-[720px] text-sm leading-7 text-white/50">{plaza.topic}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-white/10 px-3 py-2 text-sm text-white/42">
-            {weather.icon} {weather.label}
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm text-white/42">
+            {backgroundType === "color" ? (
+              <>
+                <span className="h-3 w-3 rounded-full border border-white/20" style={{ background: plaza.backgroundColor ?? FALLBACK_PLAZA_COLOR }} />
+                배경색
+              </>
+            ) : (
+              <>
+                {weather.icon} {weather.label}
+              </>
+            )}
           </span>
           <span className="rounded-full border border-white/10 px-3 py-2 text-sm text-white/42">
             {entries.length} / {plaza.maxObjects}
@@ -176,13 +196,15 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
 
       {myRecord && (
         <section className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8bd9a]/20 bg-[#d8bd9a]/10 px-4 py-3">
-          <p className="text-sm leading-6 text-[var(--mw-muted)]">이미 참여한 광장이에요. 내가 남긴 사물을 따로 보거나 눌러 내용을 다시 확인할 수 있어요.</p>
+          <p className="text-sm leading-6 text-[var(--mw-muted)]">
+            이미 참여한 광장이에요. 내가 놓은 오브젝트만 따로 보거나 눌러 내용을 다시 확인할 수 있어요.
+          </p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => setShowMineOnly(true)} className="mw-button rounded-md px-4 py-2 text-sm">
               내 오브젝트 보기
             </button>
             <button type="button" onClick={() => setPopupRecord(myRecord)} className="mw-button-solid rounded-md px-4 py-2 text-sm">
-              내 글 열기
+              글 열기
             </button>
           </div>
         </section>
@@ -191,6 +213,7 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
       <RoomScene
         mode="plaza"
         weatherKey={plaza.backgroundKey}
+        plazaBackground={plazaBackground}
         records={visibleRecords}
         myUserId={user?.id}
         showMineOnly={showMineOnly}
@@ -199,12 +222,12 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
         onPlacementMove={(position) =>
           setPendingEntry((current) => (current ? { ...current, positionX: position.x, positionY: position.y } : current))
         }
-        label={pendingEntry ? "사물을 드래그해 원하는 위치에 놓고 완료를 누르세요." : "닉네임 없이 오브젝트만 조용히 남는 공용 공간입니다."}
+        label={pendingEntry ? "오브젝트를 드래그해 원하는 위치에 놓고 완료를 누르세요." : "닉네임 없이 오브젝트만 조용히 남는 공용 공간입니다."}
       />
 
       {pendingEntry && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8bd9a]/25 bg-[#d8bd9a]/10 px-4 py-3">
-          <p className="text-sm leading-6 text-[#e0d2ba]">사물을 원하는 위치에 놓은 뒤 완료를 누르면 광장에 고정됩니다.</p>
+          <p className="text-sm leading-6 text-[#e0d2ba]">오브젝트를 원하는 위치에 놓은 뒤 완료를 누르면 광장에 고정됩니다.</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -252,12 +275,12 @@ export function PlazaDetailPage({ plazaId }: { plazaId: string }) {
         <MemoryWriteModal
           mode="plaza"
           initialDate={getTodayString()}
-          existingNotice={myEntry ? "한 광장에는 한 번만 이야기를 남길 수 있어요." : undefined}
+          existingNotice={myEntry ? "이 광장에는 한 번만 이야기를 남길 수 있어요." : undefined}
           onClose={() => setIsWriteOpen(false)}
           onSave={handleSave}
         />
       )}
-      {popupRecord && <MemoryPopup record={popupRecord} onClose={() => setPopupRecord(null)} />}
+      {popupRecord && <MemoryPopup record={popupRecord} showWeatherSummary={false} onClose={() => setPopupRecord(null)} />}
       {toast && <SaveToast message={toast} />}
     </main>
   );

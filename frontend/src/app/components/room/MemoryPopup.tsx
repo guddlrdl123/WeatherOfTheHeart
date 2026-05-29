@@ -8,20 +8,23 @@ import type { SceneObjectRecord } from "../object/RoomObjectItem";
 
 export function MemoryPopup({
   record,
+  showWeatherSummary = true,
   onClose,
 }: {
   record: SceneObjectRecord;
+  showWeatherSummary?: boolean;
   onClose: () => void;
 }) {
   const object = OBJECT_BY_KEY[record.objectKey];
   const weather = WEATHER_BY_KEY[record.weatherKey] ?? WEATHER_BY_KEY.cloudy;
   const popupImageSize = Math.round(48 * Math.min(object?.imageScale ?? 1.15, 2.2));
+  const metaText = record.memoryDate ? formatDotDate(record.memoryDate) : showWeatherSummary ? weather.label : object?.name ?? "광장 오브젝트";
 
   useEscapeKey(onClose);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/72 px-4 backdrop-blur-sm">
-      <section className="mw-fade-in mw-surface w-full max-w-[430px] rounded-xl p-6">
+      <section className={`mw-fade-in mw-surface w-full max-w-[430px] rounded-xl p-6 ${showWeatherSummary ? "" : "select-none"}`}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <ObjectImage
@@ -32,7 +35,7 @@ export function MemoryPopup({
               fallbackClassName="text-3xl"
             />
             <div>
-              <p className="text-[0.68rem] text-[var(--mw-muted-soft)]">{record.memoryDate ? formatDotDate(record.memoryDate) : weather.label}</p>
+              <p className="text-[0.68rem] text-[var(--mw-muted-soft)]">{metaText}</p>
               <h2 className="text-lg font-normal text-[var(--mw-heading)]" style={{ fontFamily: "'Noto Serif KR', Georgia, serif" }}>
                 {record.title?.trim() || "제목 없는 기억"}
               </h2>
@@ -43,9 +46,11 @@ export function MemoryPopup({
           </button>
         </div>
         <p className="text-sm leading-8 text-[var(--mw-muted)]">{record.content}</p>
-        <p className="mt-5 text-[0.72rem] leading-6 text-[var(--mw-muted-soft)]">
-          {weather.quietText} 오늘의 이야기가 방에 남아 있어요.
-        </p>
+        {showWeatherSummary && (
+          <p className="mt-5 text-[0.72rem] leading-6 text-[var(--mw-muted-soft)]">
+            {weather.quietText} 오늘의 이야기가 방에 남아 있어요.
+          </p>
+        )}
       </section>
     </div>
   );
